@@ -12,12 +12,12 @@ Pyparsing 3.0+
 
 ## What does ottolib contain?
 
-###vocab.py
+### vocab.py
 
-###commands.py
+### commands.py
 
-###conditions.py
+### conditions.py
 
-###teststrings.py
+### teststrings.py
 
-###triggers.py
+### triggers.py
