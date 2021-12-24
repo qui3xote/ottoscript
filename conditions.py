@@ -32,7 +32,7 @@ class Comparison(BaseVocab):
 class BaseCondition(BaseVocab):
     pass
 
-class IfClause(BaseConditions):
+class IfClause(BaseCondition):
     _operators = {
                     'AND': all,
                     'OR': any,
@@ -56,6 +56,9 @@ class IfClause(BaseConditions):
 
     @classmethod
     def build_evaluator(cls, tokens):
+        if type(tokens) == Comparison:
+            tokens = ["AND", tokens]
+
         comparisons = []
 
         for item in tokens:

@@ -10,6 +10,7 @@ ident = Word(alphanums + '_')
 
 class BaseVocab:
     _parser = None
+    _value = None
 
     def __init__(self,tokens):
         self.tokens = tokens
@@ -22,7 +23,7 @@ class BaseVocab:
 
     @property
     def value(self):
-        pass
+        return self._value
 
     @classmethod
     def parser(cls):
@@ -33,17 +34,13 @@ class BaseVocab:
         return cls.parser().parse_string(string)
 
 class StringValue(BaseVocab):
-    _parser = QuotedString("'",unquoteResults=False)
+    _parser = QuotedString("'",unquoteResults=True)("_value")
 
 class Numeric(BaseVocab):
-    _parser = (real_num | digits)("_value")
+    _parser = (real_num("_value") | digits("_value"))
 
     def __str__(self):
         return f"{self._value}"
-
-    @property
-    def value(self):
-        return self._value
 
 
 class Hour(BaseVocab):
@@ -89,7 +86,7 @@ class RelativeTime(BaseVocab):
 
     @property
     def as_seconds(self):
-        return self._count * self._unit.as_seconds
+        return self._count.value * self._unit.as_seconds
 
 
 term = Or([x.parser() for x in BaseVocab.__subclasses__()])
@@ -97,11 +94,11 @@ term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 class Entity(BaseVocab):
     _parser = ident("_domain") + Group(OneOrMore("." + ident))("_name") + Optional(":" + ident("_attribute"))
-    _set_state = lambda fullname, value, attr_kwargs: f"state.set({arg},{value},{*attr_kwargs}"
-    _get_state = lambda fullname: f"state.get({arg}"
+    _set_state = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
+    _get_state = lambda self, fullname: f"state.get({fullname})"
     #_set_attr = lambda fullname, value: f"state.setattr({name},{value}"
     #_get_attr = lambda name: f"state.getattr({name}"
-    _service_call = lambda domain, name, kwargs: f"service.call({domain},{name},{*kwargs}"
+    _service_call = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
 
     def __str__(self):
         return f"{self._domain}{self._name}.{self._attribute}"
@@ -123,22 +120,22 @@ class Entity(BaseVocab):
 
     @property
     def fullname(self):
-        return f"{self.domain}{self.name}"
-
-    @property
-    def value(self, attr=self.attribute):
-        if attr is not None:
-            val = self._get_state(f"{self.fullname}.{attr}")
+        if self.attribute is not None:
+            val = f"{self.domain}{self.name}.{attribute}"
         else:
-            val = self._get_state(f"{self.fullname}")
+            val = f"{self.domain}{self.name}"
         return val
 
+    @property
+    def value(self):
+        return self._get_state(f"{self.fullname}")
+
     @value.setter
-    def value(self, newvalue=None, attr=self.attribute, attr_kwargs=None):
-        if attr_kwargs is not None:
-            self._set_state(f"{self.fullname}", value=newvalue, attr_kwargs=attr_kwargs)
-        elif attr is not None:
+    def value(self, newvalue=None, attr_kwargs=None):
+        if self.attribute is not None:
             self._set_state(f"{self.fullname}.{attr}", value=newvalue, attr_kwargs=None)
+        elif attr_kwargs is not None:
+            self._set_state(f"{self.fullname}", value=newvalue, attr_kwargs=attr_kwargs)
         elif newvalue is not None:
             self._set_state(f"{self.fullname}", value=newvalue, attr_kwargs=None)
         else:
