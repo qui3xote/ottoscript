@@ -32,7 +32,7 @@ class StateChange(BaseTrigger):
 
     @property
     def kwargs(self):
-        return {"hold": self._hold.as_seconds if hasattr(self,'_hold') else None}
+        return {"state_hold": self._hold.as_seconds if hasattr(self,'_hold') else None}
 
 
 #add_subclasses_parseres_to_scope(sys.modules[__name__], BaseTrigger)
