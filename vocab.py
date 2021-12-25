@@ -11,6 +11,7 @@ ident = Word(alphanums + '_')
 class BaseVocab:
     _parser = None
     _value = None
+    _log_func = print
 
     def __init__(self,tokens):
         self.tokens = tokens
@@ -94,11 +95,11 @@ term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 class Entity(BaseVocab):
     _parser = ident("_domain") + Group(OneOrMore("." + ident))("_name") + Optional(":" + ident("_attribute"))
-    _set_state = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
-    _get_state = lambda self, fullname: f"state.get({fullname})"
+    _set_state_func = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
+    _get_state_func = lambda self, fullname: f"state.get({fullname})"
     #_set_attr = lambda fullname, value: f"state.setattr({name},{value}"
     #_get_attr = lambda name: f"state.getattr({name}"
-    _service_call = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
+    _service_call_func = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
 
     def __str__(self):
         return f"{self._domain}{self._name}.{self._attribute}"
@@ -133,11 +134,11 @@ class Entity(BaseVocab):
     @value.setter
     def value(self, newvalue=None, attr_kwargs=None):
         if self.attribute is not None:
-            self._set_state(f"{self.fullname}.{attr}", value=newvalue, attr_kwargs=None)
+            self._set_state_func(f"{self.fullname}.{attr}", value=newvalue, attr_kwargs=None)
         elif attr_kwargs is not None:
-            self._set_state(f"{self.fullname}", value=newvalue, attr_kwargs=attr_kwargs)
+            self._set_state_func(f"{self.fullname}", value=newvalue, attr_kwargs=attr_kwargs)
         elif newvalue is not None:
-            self._set_state(f"{self.fullname}", value=newvalue, attr_kwargs=None)
+            self._set_state_func(f"{self.fullname}", value=newvalue, attr_kwargs=None)
         else:
             pass
 
