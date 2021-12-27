@@ -27,12 +27,17 @@ class Comparison(BaseVocab):
         return self._opfunc(self._left[0].value, self._right[0].value)
 
     def eval(self):
+        result = self.value
+        msg = f"""{result}: {_self._opfunc.__name__}
+                left({str(self._left[0])}, value={self._left[0].value})
+                right({str(self._right[0])}, value={self._right[0].value})"""
+        self._log_func(msg, 'debug')
         return self.value
 
 class BaseCondition(BaseVocab):
     pass
 
-class IfClause(BaseConditions):
+class IfClause(BaseCondition):
     _operators = {
                     'AND': all,
                     'OR': any,
@@ -56,17 +61,27 @@ class IfClause(BaseConditions):
 
     @classmethod
     def build_evaluator(cls, tokens):
+        if type(tokens) == Comparison:
+            tokens = ["AND", tokens]
+
         comparisons = []
+        comparison_strings = []
 
         for item in tokens:
             if type(item) == list:
                 comparisons.append(cls.build_evaluator(item))
             elif type(item) == str:
-                operand = cls._operators[item.upper()]
+                opname = item.upper()
+                operand = cls._operators[opname]
             else:
                 comparisons.append(item.eval)
+                comparison_strings.append(str(item))
 
         def _eval():
-            return operand([x() for x in comparisons])
+            result = operand([x() for x in comparisons])
+            if result == False:
+                msg = f"If condition failed: {opname} {comparison_strings}"
+                self._log_func(msg, 'debug')
+            return result
 
         return _eval

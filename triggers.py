@@ -21,18 +21,18 @@ class StateChange(BaseTrigger):
     def __str__(self):
         triggers = []
         if hasattr(self,"_new"):
-            triggers.append(f"{self._entity.name} == {self._new}")
-        if self._old:
-            triggers.append(f"{self._entity.name}.old == {self._old}")
+            triggers.append(f"{self._entity.fullname} == '{self._new[0].value}'")
+        if  hasattr(self,"_old"):
+            triggers.append(f"{self._entity.fullname}.old == '{self._old[0].value}'")
 
         if len(triggers) == 0:
-            triggers = [f"{self._entity.name}"]
+            triggers = [f"{self._entity.fullname}"]
 
         return " and ".join(triggers)
 
     @property
     def kwargs(self):
-        return {"hold": self._hold.as_seconds if self._hold is not None else None}
+        return {"state_hold": self._hold.as_seconds if hasattr(self,'_hold') else None}
 
 
 #add_subclasses_parseres_to_scope(sys.modules[__name__], BaseTrigger)
