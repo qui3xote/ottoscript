@@ -22,7 +22,7 @@ class BaseVocab:
 
     @property
     def value(self):
-        pass
+        return self._value
 
     @classmethod
     def parser(cls):
