@@ -21,7 +21,7 @@ class Set(BaseCommand):
         self._entity.value = self._newvalue
 
     def __str__(self):
-        return f"state.set({self._entity.fullname},{self._newvalue})"
+        return f"state.set({self._entity.name},{self._newvalue})"
 
 class Wait(BaseCommand):
     _kwd = CaselessKeyword("WAIT")

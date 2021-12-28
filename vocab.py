@@ -100,9 +100,9 @@ term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 class Entity(BaseVocab):
     _parser = ident("_domain") + Group(OneOrMore(Literal(".").suppress() + ident))("_id") + Optional(":" + ident("_attribute"))
-    #_set_state_func = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
-    #_get_state_func = lambda self, fullname: f"state.get({fullname})"
-    #_set_attr = lambda fullname, value: f"state.setattr({name},{value}"
+    #_set_state_func = lambda self, name, value, attr_kwargs: print(f"state.set({name},{value},{attr_kwargs})")
+    #_get_state_func = lambda self, name: f"state.get({name})"
+    #_set_attr = lambda name, value: f"state.setattr({name},{value}"
     #_get_attr = lambda name: f"state.getattr({name}"
     #_service_call_func = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
 
@@ -141,17 +141,17 @@ class Entity(BaseVocab):
     @value.setter
     def value(self, newvalue=None, attr_kwargs=None):
         if self.attribute is not None:
-            self._interpreter.set_state(f"{self.fullname}.{attr}", \
+            self._interpreter.set_state(f"{self.name}.{attr}", \
                 value=newvalue, attr_kwargs=None)
 
         elif attr_kwargs is not None:
-            self._interpreter.set_state(f"{self.fullname}", \
+            self._interpreter.set_state(f"{self.name}", \
                 value=newvalue, attr_kwargs=attr_kwargs)
 
         elif newvalue is not None:
-            self._interpreter.set_state(f"{self.fullname}", \
+            self._interpreter.set_state(f"{self.name}", \
                 value=newvalue, attr_kwargs=None)
-                
+
         else:
             pass
 
