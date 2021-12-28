@@ -28,7 +28,7 @@ class Wait(BaseCommand):
     _parser = _kwd + (TimeStamp.parser() | RelativeTime.parser())("_time")
 
     def __str__(self):
-        return f"task.sleep({self._time[0].as_seconds})"
+        return f"task.sleep({self._time.as_seconds})"
 
 class Run(BaseCommand):
     _kwd = CaselessKeyword("RUN")

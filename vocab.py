@@ -1,5 +1,7 @@
 import os
 from pyparsing import *
+
+from ottolib.stringinterpreter import StringInterpreter
 #rom utils import add_subclasses_parseres_to_scope
 
 digit = Char(nums)
@@ -11,12 +13,15 @@ ident = Word(alphanums + '_')
 class BaseVocab:
     _parser = None
     _value = None
-    _log_func = print
+    _interpreter = StringInterpreter()
 
     def __init__(self,tokens):
         self.tokens = tokens
         for k,v in self.tokens.as_dict().items():
-            setattr(self,k,v)
+            if type(v) == list and len(v) == 1:
+                setattr(self,k,v[0])
+            else:
+                setattr(self,k,v)
 
 
     def __str__(self):
@@ -94,19 +99,19 @@ term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 
 class Entity(BaseVocab):
-    _parser = ident("_domain") + Group(OneOrMore("." + ident))("_name") + Optional(":" + ident("_attribute"))
-    _set_state_func = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
-    _get_state_func = lambda self, fullname: f"state.get({fullname})"
+    _parser = ident("_domain") + Group(OneOrMore(Literal(".").suppress() + ident))("_id") + Optional(":" + ident("_attribute"))
+    #_set_state_func = lambda self, fullname, value, attr_kwargs: print(f"state.set({fullname},{value},{attr_kwargs})")
+    #_get_state_func = lambda self, fullname: f"state.get({fullname})"
     #_set_attr = lambda fullname, value: f"state.setattr({name},{value}"
     #_get_attr = lambda name: f"state.getattr({name}"
-    _service_call_func = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
+    #_service_call_func = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
 
     def __str__(self):
-        return f"{self._domain}{self._name}.{self._attribute}"
+        return f"{self.domain}{self.name}.{self.attribute}"
 
     @property
-    def name(self):
-        return "".join(self._name)
+    def id(self):
+        return ".".join(self._id)
 
     @property
     def domain(self):
@@ -120,25 +125,33 @@ class Entity(BaseVocab):
             return None
 
     @property
-    def fullname(self):
+    def name(self):
         if self.attribute is not None:
-            val = f"{self.domain}{self.name}.{attribute}"
+            val = f"{self.domain}.{self._id}.{attribute}"
         else:
-            val = f"{self.domain}{self.name}"
+            val = f"{self.domain}.{self._id}"
         return val
 
     @property
     def value(self):
-        return self._get_state_func(f"{self.fullname}")
+        value = self._interpreter.get_state(self.name)
+        self._interpreter.log(value,'debug')
+        return value
 
     @value.setter
     def value(self, newvalue=None, attr_kwargs=None):
         if self.attribute is not None:
-            self._set_state_func(f"{self.fullname}.{attr}", value=newvalue, attr_kwargs=None)
+            self._interpreter.set_state(f"{self.fullname}.{attr}", \
+                value=newvalue, attr_kwargs=None)
+
         elif attr_kwargs is not None:
-            self._set_state_func(f"{self.fullname}", value=newvalue, attr_kwargs=attr_kwargs)
+            self._interpreter.set_state(f"{self.fullname}", \
+                value=newvalue, attr_kwargs=attr_kwargs)
+
         elif newvalue is not None:
-            self._set_state_func(f"{self.fullname}", value=newvalue, attr_kwargs=None)
+            self._interpreter.set_state(f"{self.fullname}", \
+                value=newvalue, attr_kwargs=None)
+                
         else:
             pass
 
@@ -148,7 +161,7 @@ class Var(BaseVocab):
 
     def __init__(self,tokens):
         self.tokens = tokens
-        self._name = tokens[0][1:]
+        self._name = tokens[1:]
         self._value = None
 
     def __str__(self):

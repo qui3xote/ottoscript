@@ -24,14 +24,14 @@ class Comparison(BaseVocab):
 
     @property
     def value(self):
-        return self._opfunc(self._left[0].value, self._right[0].value)
+        return self._opfunc(self._left.value, self._right.value)
 
     def eval(self):
         result = self.value
-        msg = f"""{result}: {_self._opfunc.__name__}
-                left({str(self._left[0])}, value={self._left[0].value})
-                right({str(self._right[0])}, value={self._right[0].value})"""
-        self._log_func(msg, 'debug')
+        msg = f"""{result}: {self._opfunc.__name__}
+                left({str(self._left)}, value={self._left.value})
+                right({str(self._right)}, value={self._right.value})"""
+        self._interpreter.log(msg, 'debug')
         return self.value
 
 class BaseCondition(BaseVocab):
