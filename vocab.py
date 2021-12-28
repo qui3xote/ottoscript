@@ -133,9 +133,9 @@ class Entity(BaseVocab):
         return val
 
     @property
-    def value(self):
-        value = self._interpreter.get_state(self.name)
-        self._interpreter.log(value,'debug')
+    async def value(self):
+        value = await self._interpreter.get_state(self.name)
+        await self._interpreter.log(value,'debug')
         return value
 
     @value.setter
