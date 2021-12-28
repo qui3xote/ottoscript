@@ -75,7 +75,7 @@ class IfClause(BaseCondition):
                 operand = cls._operators[opname]
             else:
                 comparisons.append(item.eval)
-                comparison_strings.append(str(item))
+                comparison_strings.append(item)
 
         def _eval():
             result = operand([x() for x in comparisons])
