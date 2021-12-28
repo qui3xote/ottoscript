@@ -22,6 +22,9 @@ class Comparison(BaseVocab):
         self._operators = type(self)._operators
         self._opfunc = self._operators[self._operand]
 
+    def __str__(self):
+        return ' '.join([str(x) for x in self.tokens])
+
     @property
     def value(self):
         return self._opfunc(self._left.value, self._right.value)
@@ -57,7 +60,7 @@ class IfClause(BaseCondition):
 
     @property
     def value(self):
-        return self._eval()
+        return self._eval(self._interpreter)
 
     @classmethod
     def build_evaluator(cls, tokens):
@@ -75,13 +78,13 @@ class IfClause(BaseCondition):
                 operand = cls._operators[opname]
             else:
                 comparisons.append(item.eval)
-                comparison_strings.append(item)
+                comparison_strings.append(str(item))
 
-        def _eval():
+        def _eval(interpreter):
             result = operand([x() for x in comparisons])
             if result == False:
                 msg = f"If condition failed: {opname} {comparison_strings}"
-                self._log_func(msg, 'debug')
+                interpreter.log(msg, 'debug')
             return result
 
         return _eval
