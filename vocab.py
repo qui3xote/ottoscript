@@ -129,7 +129,7 @@ class Entity(BaseVocab):
 
     @property
     def value(self):
-        return self._get_state(f"{self.fullname}")
+        return self._get_state_func(f"{self.fullname}")
 
     @value.setter
     def value(self, newvalue=None, attr_kwargs=None):
