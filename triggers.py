@@ -21,9 +21,9 @@ class StateChange(BaseTrigger):
     def __str__(self):
         triggers = []
         if hasattr(self,"_new"):
-            triggers.append(f"{self._entity.name} == '{self._new[0].value}'")
+            triggers.append(f"{self._entity.name} == '{self._new.value}'")
         if  hasattr(self,"_old"):
-            triggers.append(f"{self._entity.name}.old == '{self._old[0].value}'")
+            triggers.append(f"{self._entity.name}.old == '{self._old.value}'")
 
         if len(triggers) == 0:
             triggers = [f"{self._entity.name}"]

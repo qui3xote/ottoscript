@@ -1,4 +1,4 @@
-class StringInterpreter:
+class TestInterpreter:
     def __init__(self):
         pass
 

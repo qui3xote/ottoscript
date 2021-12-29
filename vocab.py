@@ -1,7 +1,7 @@
 import os
 from pyparsing import *
 
-from ottolib.stringinterpreter import StringInterpreter
+#from ottolib.stringinterpreter import StringInterpreter
 #rom utils import add_subclasses_parseres_to_scope
 
 digit = Char(nums)
@@ -13,7 +13,6 @@ ident = Word(alphanums + '_')
 class BaseVocab:
     _parser = None
     _value = None
-    _interpreter = StringInterpreter()
 
     def __init__(self,tokens):
         self.tokens = tokens
@@ -133,27 +132,25 @@ class Entity(BaseVocab):
         return val
 
     @property
-    async def value(self):
-        value = await self._interpreter.get_state(self.name)
-        await self._interpreter.log(value,'debug')
-        return value
+    def value(self):
+        return self
 
-    @value.setter
-    def value(self, newvalue=None, attr_kwargs=None):
-        if self.attribute is not None:
-            self._interpreter.set_state(f"{self.name}.{attr}", \
-                value=newvalue, attr_kwargs=None)
-
-        elif attr_kwargs is not None:
-            self._interpreter.set_state(f"{self.name}", \
-                value=newvalue, attr_kwargs=attr_kwargs)
-
-        elif newvalue is not None:
-            self._interpreter.set_state(f"{self.name}", \
-                value=newvalue, attr_kwargs=None)
-
-        else:
-            pass
+    # @value.setter
+    # def value(self, newvalue=None, attr_kwargs=None):
+    #     if self.attribute is not None:
+    #         self._interpreter.set_state(f"{self.name}.{attr}", \
+    #             value=newvalue, attr_kwargs=None)
+    #
+    #     elif attr_kwargs is not None:
+    #         self._interpreter.set_state(f"{self.name}", \
+    #             value=newvalue, attr_kwargs=attr_kwargs)
+    #
+    #     elif newvalue is not None:
+    #         self._interpreter.set_state(f"{self.name}", \
+    #             value=newvalue, attr_kwargs=None)
+    #
+    #     else:
+    #         pass
 
 
 class Var(BaseVocab):

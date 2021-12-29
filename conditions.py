@@ -29,13 +29,17 @@ class Comparison(BaseVocab):
     def value(self):
         return self._opfunc(self._left.value, self._right.value)
 
+    # def eval(self):
+    #     result = self.value
+    #     msg = f"""{result}: {self._opfunc.__name__}
+    #             left({str(self._left)}, value={self._left.value})
+    #             right({str(self._right)}, value={self._right.value})"""
+    #     self._interpreter.log(msg, 'debug')
+    #     return self.value
+
     def eval(self):
-        result = self.value
-        msg = f"""{result}: {self._opfunc.__name__}
-                left({str(self._left)}, value={self._left.value})
-                right({str(self._right)}, value={self._right.value})"""
-        self._interpreter.log(msg, 'debug')
-        return self.value
+        return {'opfunc': self._opfunc, 'items': [self._left.value, self._right.value]}
+
 
 class BaseCondition(BaseVocab):
     pass
@@ -56,35 +60,26 @@ class IfClause(BaseCondition):
 
     def __init__(self,tokens):
         super().__init__(tokens)
-        self._eval = type(self).build_evaluator(self._conditions)
+        self._evaltree = self.build_evaluator_tree()
 
-    @property
-    def value(self):
-        return self._eval(self._interpreter)
+    def eval(self):
+        return self._evaltree
 
-    @classmethod
-    def build_evaluator(cls, tokens):
-        if type(tokens) == Comparison:
-            tokens = ["AND", tokens]
+    def build_evaluator_tree(self):
+        if type(self._conditions) == Comparison:
+            tokens = ["AND", self._conditions]
+        else:
+            tokens = self._conditions
 
         comparisons = []
-        comparison_strings = []
 
         for item in tokens:
             if type(item) == list:
-                comparisons.append(cls.build_evaluator(item))
+                comparisons.append(self.build_evaluator_tree(item))
             elif type(item) == str:
                 opname = item.upper()
-                operand = cls._operators[opname]
+                operand = self._operators[opname]
             else:
-                comparisons.append(item.eval)
-                comparison_strings.append(str(item))
+                comparisons.append(item)
 
-        def _eval(interpreter):
-            result = operand([x() for x in comparisons])
-            if result == False:
-                msg = f"If condition failed: {opname} {comparison_strings}"
-                interpreter.log(msg, 'debug')
-            return result
-
-        return _eval
+        return {'opfunc': operand, 'items': comparisons}

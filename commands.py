@@ -17,11 +17,11 @@ class Set(BaseCommand):
     _kwd = CaselessKeyword("SET")
     _parser = _kwd + Entity.parser()("_entity") + (CaselessKeyword("TO") | "=") + (Var.parser() | Numeric.parser() | StringValue.parser())("_newvalue")
 
-    def run(self):
-        self._entity.value = self._newvalue
-
     def __str__(self):
         return f"state.set({self._entity.name},{self._newvalue})"
+
+    def eval(self):
+        return [{'operation': 'set', 'args': [self._entity], 'kwargs': {'value': self._newvalue.value}}]
 
 class Wait(BaseCommand):
     _kwd = CaselessKeyword("WAIT")
@@ -30,12 +30,8 @@ class Wait(BaseCommand):
     def __str__(self):
         return f"task.sleep({self._time.as_seconds})"
 
-class Run(BaseCommand):
-    _kwd = CaselessKeyword("RUN")
-    _parser = _kwd + (ident | Var.parser())("_routine")
-
-    def __str__(self):
-        return f"RUN {self._routine}"
+    def eval(self):
+        return [{'operation': 'sleep', 'args': self._time.as_seconds}]
 
 
 
