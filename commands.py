@@ -41,10 +41,5 @@ class Turn(BaseCommand):
         domain = self._entity.domain
         servicename = 'turn_'+self._newstate.lower()
         entity_id = self._entity.name
-        operation = {'opfunc':'service_call', 'kwargs': {'domain': domain, 'name': servicename, 'entity_id': entity_id}}
+        operation = {'opfunc':'service_call', 'args':[domain, servicename], 'kwargs': {'entity_id': entity_id}}
         return [operation]
-
-#add_subclasses_parseres_to_scope(sys.modules[__name__], BaseCommand)
-
-#command = Or([cls.parser() for cls in BaseCommand.__subclasses__()])
-#COMMAND_KW = Or([cls._kwd for cls in BaseCommand.__subclasses__()])
