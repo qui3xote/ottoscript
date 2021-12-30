@@ -21,7 +21,7 @@ class Set(BaseCommand):
         return f"state.set({self._entity.name},{self._newvalue})"
 
     def eval(self):
-        return [{'operation': 'set', 'args': [self._entity], 'kwargs': {'value': self._newvalue.value}}]
+        return [{'opfunc': 'set_state', 'args': [self._entity], 'kwargs': {'value': self._newvalue.value}}]
 
 class Wait(BaseCommand):
     _kwd = CaselessKeyword("WAIT")
@@ -31,7 +31,7 @@ class Wait(BaseCommand):
         return f"task.sleep({self._time.as_seconds})"
 
     def eval(self):
-        return [{'operation': 'sleep', 'args': self._time.as_seconds}]
+        return [{'opfunc': 'sleep', 'args': self._time.as_seconds}]
 
 
 
