@@ -21,7 +21,7 @@ class Set(BaseCommand):
         return f"state.set({self._entity.name},{self._newvalue})"
 
     def eval(self):
-        return [{'opfunc': 'set_state', 'args': [self._entity], 'kwargs': {'value': self._newvalue.value}}]
+        return [{'opfunc': 'set_state', 'args': [self._entity.name], 'kwargs': {'value': self._newvalue.value}}]
 
 class Wait(BaseCommand):
     _kwd = CaselessKeyword("WAIT")
@@ -33,8 +33,16 @@ class Wait(BaseCommand):
     def eval(self):
         return [{'opfunc': 'sleep', 'args': self._time.as_seconds}]
 
+class Turn(BaseCommand):
+    _kwd = CaselessKeyword("TURN")
+    _parser = _kwd + (CaselessKeyword("ON") | CaselessKeyword("OFF"))('_newstate') + Entity.parser()("_entity")
 
-
+    def eval(self):
+        domain = self._entity.domain
+        servicename = 'turn_'+self._newstate.lower()
+        entity_id = self._entity.name
+        operation = {'opfunc':'service_call', 'kwargs': {'domain': domain, 'name': servicename, 'entity_id': entity_id}}
+        return [operation]
 
 #add_subclasses_parseres_to_scope(sys.modules[__name__], BaseCommand)
 
