@@ -38,8 +38,56 @@ class Turn(BaseCommand):
     _parser = _kwd + (CaselessKeyword("ON") | CaselessKeyword("OFF"))('_newstate') + Entity.parser()("_entity")
 
     def eval(self):
-        domain = self._entity.domain
-        servicename = 'turn_'+self._newstate.lower()
-        entity_id = self._entity.name
-        operation = {'opfunc':'service_call', 'args':[domain, servicename], 'kwargs': {'entity_id': entity_id}}
+        args = [self._entity.domain, 'turn_'+self._newstate.lower()]
+        kwargs = {'entity_id': self._entity.name}
+        operation = {'opfunc':'service_call', 'args': args, 'kwargs': kwargs}
+        return [operation]
+
+class Toggle(BaseCommand):
+    _kwd = CaselessKeyword("TOGGLE")
+    _parser = _kwd + + Entity.parser()("_entity")
+
+    def eval(self):
+        args = [self._entity.domain, 'toggle']
+        kwargs = {'entity_id': self._entity.name}
+        operation = {'opfunc':'service_call', 'args': args, 'kwargs': kwargs}
+        return [operation]
+
+
+class Dim(BaseCommand):
+    _kwd = CaselessKeyword("DIM")
+    _parser = _kwd + Entity.parser()("_entity") + \
+        (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") + Numeric.parser()("_number") + Optional('%')("_use_pct")
+
+    def eval(self):
+        args = ["light", "turn_on" if self._number > 0 else "turn_off"]
+        entity_id =
+        kwargs =  {'entity_id': self._entity.name}
+
+        if self._type.upper() == 'TO':
+            param = 'brightness'
+        else:
+            param = 'brightness_step'
+
+        if hasattr(self,'_use_pct'):
+            param += '_pct'
+
+        kwargs[param] = self._number
+
+        operation = {'opfunc':'service_call', 'args':args, 'kwargs': kwargs}
+        return [operation]
+
+class Lock(BaseCommand):
+    _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK")
+    _parser = _kwd("_type") + Entity.parser()("_entity") + \
+            + Optional(CaselessKeyword("WITH") + Numeric.parser()('_code'))
+
+    def eval(self):
+        args = ["lock", self._type.lower()]
+        kwargs =  {'entity_id': self._entity.name}
+
+        if hasattr(self,'_code'):
+            kwargs['code'] += self._code
+
+        operation = {'opfunc':'service_call', 'args':args, 'kwargs': kwargs}
         return [operation]

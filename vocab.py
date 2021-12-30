@@ -42,7 +42,7 @@ class StringValue(BaseVocab):
     _parser = QuotedString("'",unquoteResults=True)("_value")
 
 class Numeric(BaseVocab):
-    _parser = (real_num("_value") | digits("_value"))
+    _parser = Combine(Optional('-') + (real_num | digits)("_value") 
 
     def __str__(self):
         return f"{self._value}"
