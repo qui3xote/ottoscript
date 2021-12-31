@@ -1,9 +1,6 @@
 import os
 from pyparsing import *
 
-#from ottolib.stringinterpreter import StringInterpreter
-#rom utils import add_subclasses_parseres_to_scope
-
 digit = Char(nums)
 digits = Combine(OneOrMore(digit)).set_parse_action(lambda x: int(x[0]))
 real_num = Combine(digits + Literal(".") + digits).set_parse_action(lambda x: float(x[0]))
@@ -42,7 +39,7 @@ class StringValue(BaseVocab):
     _parser = QuotedString("'",unquoteResults=True)("_value")
 
 class Numeric(BaseVocab):
-    _parser = Combine(Optional('-') + (real_num | digits)("_value") 
+    _parser = Combine(Optional('-') + (real_num | digits)("_value")
 
     def __str__(self):
         return f"{self._value}"
@@ -135,23 +132,6 @@ class Entity(BaseVocab):
     def value(self):
         return self
 
-    # @value.setter
-    # def value(self, newvalue=None, attr_kwargs=None):
-    #     if self.attribute is not None:
-    #         self._interpreter.set_state(f"{self.name}.{attr}", \
-    #             value=newvalue, attr_kwargs=None)
-    #
-    #     elif attr_kwargs is not None:
-    #         self._interpreter.set_state(f"{self.name}", \
-    #             value=newvalue, attr_kwargs=attr_kwargs)
-    #
-    #     elif newvalue is not None:
-    #         self._interpreter.set_state(f"{self.name}", \
-    #             value=newvalue, attr_kwargs=None)
-    #
-    #     else:
-    #         pass
-
 
 class Var(BaseVocab):
     _parser = Word('@',alphanums+'_')
@@ -170,10 +150,10 @@ class Var(BaseVocab):
 
     @property
     def value(self):
-        return self._value
+        return self._value.value
 
     @value.setter
-    def value(self,new_value):
+    def value(self, new_value):
         self._value = new_value
 
 #expressions

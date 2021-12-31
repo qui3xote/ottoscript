@@ -2,9 +2,7 @@ import sys
 from pyparsing import *
 from ottolib.vocab import *
 
-#from utils import add_subclasses_parseres_to_scope
 
-#expressions
 class BaseTrigger(BaseVocab):
     _parser = None
 
