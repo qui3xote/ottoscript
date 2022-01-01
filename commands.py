@@ -20,15 +20,9 @@ class Set(BaseCommand):
     def __str__(self):
         return f"state.set({self._entity.name},{self._newvalue})"
 
-    def eval(self):
-        kwargs = {'value': self._entity.name}
-        if hasattr(self,"_entity"):
-            opfunc = 'set_state'
-            args = [self._entity.name]
-        elif hasattr(self,"_var"):
-            opfunc = 'set_variable'
-            args = [self._var.name]
-        return [{'opfunc': 'set_state', 'args': args, 'kwargs': kwargs}]
+    async def eval(self):
+        result = await self.interpreter.set_state(self._entity.name, value=self._newvalue)
+        return result
 
 class Wait(BaseCommand):
     _kwd = CaselessKeyword("WAIT")
@@ -37,28 +31,29 @@ class Wait(BaseCommand):
     def __str__(self):
         return f"task.sleep({self._time.as_seconds})"
 
-    def eval(self):
-        return [{'opfunc': 'sleep', 'args': self._time.as_seconds}]
+    async def eval(self):
+        result = await self.interpreter.sleep(self._time.as_seconds)
+        return result
 
 class Turn(BaseCommand):
     _kwd = CaselessKeyword("TURN")
     _parser = _kwd + (CaselessKeyword("ON") | CaselessKeyword("OFF"))('_newstate') + Entity.parser()("_entity")
 
-    def eval(self):
-        args = [self._entity.domain, 'turn_'+self._newstate.lower()]
+    async def eval(self):
+        servicename = 'turn_'+self._newstate.lower()
         kwargs = {'entity_id': self._entity.name}
-        operation = {'opfunc':'service_call', 'args': args, 'kwargs': kwargs}
-        return [operation]
+        result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
+        return result
 
 class Toggle(BaseCommand):
     _kwd = CaselessKeyword("TOGGLE")
     _parser = _kwd + Entity.parser()("_entity")
 
-    def eval(self):
-        args = [self._entity.domain, 'toggle']
+    async def eval(self):
+        servicename = 'toggle'
         kwargs = {'entity_id': self._entity.name}
-        operation = {'opfunc':'service_call', 'args': args, 'kwargs': kwargs}
-        return [operation]
+        result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
+        return result
 
 
 class Dim(BaseCommand):
@@ -66,9 +61,13 @@ class Dim(BaseCommand):
     _parser = _kwd + Entity.parser()("_entity") + \
         (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") + (Var.parser() | Numeric.parser())("_number") + Optional('%')("_use_pct")
 
-    def eval(self):
-        args = ["light", "turn_on" if self._number > 0 else "turn_off"]
-        entity_id = self._entity.name
+    async def eval(self):
+
+        if self._number.value > 0 or hasattr(self,'_use_pct'):
+            servicename = "turn_on"
+        else:
+            servicename = "turn_off"
+
         kwargs =  {'entity_id': self._entity.name}
 
         if self._type.upper() == 'TO':
@@ -81,8 +80,8 @@ class Dim(BaseCommand):
 
         kwargs[param] = self._number.value
 
-        operation = {'opfunc':'service_call', 'args':args, 'kwargs': kwargs}
-        return [operation]
+        result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
+        return result
 
 class Lock(BaseCommand):
     _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK"))
@@ -90,12 +89,12 @@ class Lock(BaseCommand):
             + Optional(CaselessKeyword("WITH") \
             + (Var.parser() | Numeric.parser())('_code'))
 
-    def eval(self):
-        args = ["lock", self._type.lower()]
+    async def eval(self):
+        servicename = self._type.lower()]
         kwargs =  {'entity_id': self._entity.name}
 
         if hasattr(self,'_code'):
             kwargs['code'] += self._code.value
 
-        operation = {'opfunc':'service_call', 'args':args, 'kwargs': kwargs}
-        return [operation]
+        result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
+        return result

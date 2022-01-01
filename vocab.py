@@ -142,6 +142,7 @@ class Entity(BaseVocab):
 
     @property
     def value(self):
+        self.eval()
         return self._value
 
 

@@ -30,7 +30,7 @@ class Comparison(BaseVocab):
         return self._opfunc(self._left.value, self._right.value)
 
     def eval(self):
-        return {'opfunc': self._opfunc, 'items': [self._left.value, self._right.value]}
+        return self._opfunc(self._left.value, self._right.value)
 
 
 class BaseCondition(BaseVocab):
@@ -52,10 +52,27 @@ class IfClause(BaseCondition):
 
     def __init__(self,tokens):
         super().__init__(tokens)
-        self._evaltree = self.build_evaluator_tree()
+        self._eval_tree = self.build_evaluator_tree()
 
-    def eval(self):
-        return self._evaltree
+    async def eval(self):
+         return await self.eval_tree(self._eval_tree)
+
+
+    async def eval_tree(self, tree):
+        statements = []
+        strings = []
+
+        for item in tree['items']:
+            if type(item) == dict:
+                statements.append(self.eval_tree(item))
+            if type(item) == Comparison:
+                result = item.eval()
+                statements.append(result)
+                strings.append(f"\n{item}: {result}")
+
+        result = tree['opfunc'](statements)
+        await self.interpreter.log_debug(f"If clause result: {result}: {strings}"")
+        return result
 
     def build_evaluator_tree(self):
         if type(self._conditions) == Comparison:
