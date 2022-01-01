@@ -4,3 +4,4 @@ from ottolib.commands import *
 from ottolib.teststrings import *
 from ottolib.conditions import *
 from ottolib.triggers import *
+from ottolib.parser import *

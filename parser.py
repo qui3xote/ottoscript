@@ -2,7 +2,9 @@ from pyparsing import *
 from ottolib import *
 
 class OttoParser:
-    def __init__(self):
+    def __init__(self, interpreter):
+        BaseVocab.set_interpreter(interpreter)
+        
         command = Or([cls.parser() for cls in BaseCommand.__subclasses__()])
         trigger = Or([cls.parser() for cls in BaseTrigger.__subclasses__()])
         condition = Or([cls.parser() for cls in BaseCondition.__subclasses__()])

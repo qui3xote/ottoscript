@@ -41,8 +41,8 @@ class BaseVocab:
         return cls._parser.set_parse_action(cls)
 
     @classmethod
-    def set_intepreter(cls, interpreter):
-        return cls._interpreter = interpreter
+    def set_interpreter(cls, interpreter):
+        cls._interpreter = interpreter
 
     @classmethod
     def from_string(cls,string):
@@ -115,11 +115,7 @@ class Entity(BaseVocab):
         return f"{self.domain}{self.name}.{self.attribute}"
 
     def eval(self):
-        if self.interpreter is None:
-            interpreter = self.interpreter
-
-        print('ineval')
-        self.interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")
+        self._value = self.interpreter.get_state(self.name)
 
     @property
     def id(self):
@@ -146,7 +142,7 @@ class Entity(BaseVocab):
 
     @property
     def value(self):
-        return self
+        return self._value
 
 
 class Var(BaseVocab):
