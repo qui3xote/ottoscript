@@ -96,14 +96,15 @@ term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 class Entity(BaseVocab):
     _parser = ident("_domain") + Group(OneOrMore(Literal(".").suppress() + ident))("_id") + Optional(":" + ident("_attribute"))
-    #_set_state_func = lambda self, name, value, attr_kwargs: print(f"state.set({name},{value},{attr_kwargs})")
-    #_get_state_func = lambda self, name: f"state.get({name})"
-    #_set_attr = lambda name, value: f"state.setattr({name},{value}"
-    #_get_attr = lambda name: f"state.getattr({name}"
-    #_service_call_func = lambda self, domain, name, kwargs: print(f"service.call({domain},{name},{kwargs}")
 
     def __str__(self):
         return f"{self.domain}{self.name}.{self.attribute}"
+
+    def eval(self, interpreter=None):
+        if interpreter is None:
+            interpreter = self.interpreter
+
+        interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")    
 
     @property
     def id(self):
