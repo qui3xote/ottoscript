@@ -10,6 +10,7 @@ ident = Word(alphanums + '_')
 class BaseVocab:
     _parser = None
     _value = None
+    _interpreter = None
 
     def __init__(self,tokens):
         self.tokens = tokens
@@ -24,6 +25,14 @@ class BaseVocab:
         return f"{''.join(self.tokens)}"
 
     @property
+    def interpreter(self):
+        return self._interpreter
+
+    @interpreter.setter
+    def interpreter(self, interpreter):
+        self._interpreter = interpreter
+
+    @property
     def value(self):
         return self._value
 
@@ -32,7 +41,11 @@ class BaseVocab:
         return cls._parser.set_parse_action(cls)
 
     @classmethod
-    def fromstring(cls,string):
+    def set_intepreter(cls, interpreter):
+        return cls._interpreter = interpreter
+
+    @classmethod
+    def from_string(cls,string):
         return cls.parser().parse_string(string)
 
 class StringValue(BaseVocab):
@@ -101,11 +114,12 @@ class Entity(BaseVocab):
     def __str__(self):
         return f"{self.domain}{self.name}.{self.attribute}"
 
-    def eval(self, interpreter=None):
-        if interpreter is None:
+    def eval(self):
+        if self.interpreter is None:
             interpreter = self.interpreter
 
-        interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")
+        print('ineval')
+        self.interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")
 
     @property
     def id(self):
