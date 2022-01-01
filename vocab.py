@@ -114,8 +114,8 @@ class Entity(BaseVocab):
     def __str__(self):
         return f"{self.domain}{self.name}.{self.attribute}"
 
-    def eval(self):
-        self._value = self.interpreter.get_state(self.name)
+    async def eval(self):
+        self._value = await self.interpreter.get_state(self.name)
 
     @property
     def id(self):
