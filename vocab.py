@@ -39,7 +39,8 @@ class StringValue(BaseVocab):
     _parser = QuotedString("'",unquoteResults=True)("_value")
 
 class Numeric(BaseVocab):
-    _parser = Combine(Optional('-') + (real_num | digits)("_value")
+
+    _parser = Combine(Optional('-') + (real_num | digits)("_value"))
 
     def __str__(self):
         return f"{self._value}"
@@ -104,7 +105,7 @@ class Entity(BaseVocab):
         if interpreter is None:
             interpreter = self.interpreter
 
-        interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")    
+        interpreter.log(f"{self.name}: {self.interpreter.state_get(self.name)}")
 
     @property
     def id(self):
