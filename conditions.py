@@ -54,6 +54,10 @@ class IfClause(BaseCondition):
         super().__init__(tokens)
         self._eval_tree = self.build_evaluator_tree()
 
+    def __str__(self):
+        return " ".join([str(x) for x in self.tokens])
+
+
     async def eval(self):
          return await self.eval_tree(self._eval_tree)
 
