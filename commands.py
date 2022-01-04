@@ -90,7 +90,7 @@ class Lock(BaseCommand):
             + (Var.parser() | Numeric.parser())('_code'))
 
     async def eval(self):
-        servicename = self._type.lower()]
+        servicename = self._type.lower()
         kwargs =  {'entity_id': self._entity.name}
 
         if hasattr(self,'_code'):
