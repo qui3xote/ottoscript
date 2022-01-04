@@ -39,9 +39,9 @@ class OttoScript:
         await self.interpreter.log_info("Executing")
         for conditions, commands in self._parsobj.condition_clauses.as_list():
             await self.interpreter.log_info("In loop")
-            await self.interpreter.log_info(f"Condtions: {conditions}")
-            if conditions.eval() == True:
+            await self.interpreter.log_info(f"Condtions: {type(conditions)}")
+            if await conditions.eval() == True:
                 for command in commands:
-                    command.eval()
+                    await command.eval()
             else:
                 await self.interpreter.log_info(f"Condition Failed: {conditions}")
