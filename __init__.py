@@ -41,7 +41,8 @@ class OttoScript:
             await self.interpreter.log_info("In loop")
             await self.interpreter.log_info(f"Condtions: {type(conditions)}")
             if await conditions.eval() == True:
+                await self.interpreter.log_info("Conditions true")
                 for command in commands:
                     await command.eval()
             else:
-                await self.interpreter.log_info(f"Condition Failed: {conditions}")
+                await self.interpreter.log_info(f"Condition Failed")
