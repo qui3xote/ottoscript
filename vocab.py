@@ -119,6 +119,7 @@ class Entity(BaseVocab):
 
     async def eval(self):
         self._value = await self.interpreter.get_state(self.name)
+        return self._value
 
     @property
     def id(self):
@@ -142,12 +143,6 @@ class Entity(BaseVocab):
         else:
             val = f"{self.domain}.{self._id}"
         return val
-
-    @property
-    def value(self):
-        self.eval()
-        return self._value
-
 
 class Var(BaseVocab):
     _parser = Word('@',alphanums+'_')
