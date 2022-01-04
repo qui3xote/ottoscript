@@ -22,6 +22,7 @@ class OttoScript:
         BaseVocab.set_interpreter(interpreter)
         self.interpreter = interpreter
         self._parsobj = self.parse(script)
+        self.interpreter.log_info("Parsed!")
 
     @property
     def parser(self):
