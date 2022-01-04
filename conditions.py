@@ -71,7 +71,7 @@ class IfClause(BaseCondition):
                 strings.append(f"\n{item}: {result}")
 
         result = tree['opfunc'](statements)
-        await self.interpreter.log_debug(f"If clause result: {result}: {strings}"")
+        await self.interpreter.log_debug(f"If clause result: {result}: {strings}")
         return result
 
     def build_evaluator_tree(self):
