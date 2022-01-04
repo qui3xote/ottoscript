@@ -1,9 +1,9 @@
 from pyparsing import *
-from ottolib.vocab import *
-from ottolib.commands import *
-from ottolib.teststrings import *
-from ottolib.conditions import *
-from ottolib.triggers import *
+from ottoscript.vocab import *
+from ottoscript.commands import *
+from ottoscript.teststrings import *
+from ottoscript.conditions import *
+from ottoscript.triggers import *
 
 
 class OttoScript:

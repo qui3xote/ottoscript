@@ -1,6 +1,6 @@
 import operator as op
 from pyparsing import *
-from ottolib.vocab import *
+from ottoscript.vocab import *
 
 
 class Comparison(BaseVocab):

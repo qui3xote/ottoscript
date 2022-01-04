@@ -1,6 +1,6 @@
 import sys
 from pyparsing import *
-from ottolib.vocab import *
+from ottoscript.vocab import *
 
 
 class BaseTrigger(BaseVocab):
