@@ -30,10 +30,12 @@ class Comparison(BaseVocab):
         return self._opfunc(self._left.value, self._right.value)
 
     async def eval(self):
-        result = self._opfunc(await self._left.eval(), await self._right.eval())
+        left = await self._left.eval()
+        right = await self._right.eval()
+        result = self._opfunc(left, right)
         await self.interpreter.log_info(f"Condition {result}: {self._opfunc} \
-                                            ({self._left.value}, {str(self._left)}) \
-                                            ({self._right.value}, {str(self._right)}) ")
+                                            ({left}, {str(self._left)}) \
+                                            ({right}, {str(self._right)}) ")
         return result
 
 
