@@ -35,7 +35,9 @@ class OttoScript:
         return self._parsobj.when[0]
 
     def execute(self):
+        self.interpreter.log_info("Executing")
         for conditions, commands in self._parsobj.condition_clauses.as_list():
+            self.interpreter.log_info("In loop")
             self.interpreter.log_info(f"Condtions: {conditions}")
             if conditions.eval() == True:
                 for command in commands:
