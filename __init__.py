@@ -36,6 +36,7 @@ class OttoScript:
 
     def execute(self):
         for conditions, commands in self._parsobj.condition_clauses.as_list():
+            self.interpreter.log_info(f"Condtions: {conditions}")
             if conditions.eval() == True:
                 for command in commands:
                     command.eval()
