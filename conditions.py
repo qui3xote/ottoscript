@@ -29,7 +29,7 @@ class Comparison(BaseVocab):
     def value(self):
         return self._opfunc(self._left.value, self._right.value)
 
-    def eval(self):
+    async def eval(self):
         result = self._opfunc(await self._left.eval(), await self._right.eval())
         await self.interpreter.log_info(f"Condition {result}: {self._opfunc} \
                                             ({self._left.value}, {str(self._left)}) \
