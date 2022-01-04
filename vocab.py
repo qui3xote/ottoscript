@@ -36,6 +36,9 @@ class BaseVocab:
     def value(self):
         return self._value
 
+    async def eval(self):
+        return self.value
+
     @classmethod
     def parser(cls):
         return cls._parser.set_parse_action(cls)

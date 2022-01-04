@@ -30,7 +30,7 @@ class Comparison(BaseVocab):
         return self._opfunc(self._left.value, self._right.value)
 
     def eval(self):
-        return self._opfunc(self._left.value, self._right.value)
+        return self._opfunc(await self._left.eval(), await self._right.eval())
 
 
 class BaseCondition(BaseVocab):
