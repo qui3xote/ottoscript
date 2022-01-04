@@ -20,6 +20,7 @@ class OttoScript:
 
     def __init__(self, interpreter, script):
         BaseVocab.set_interpreter(interpreter)
+        self.interpreter = interpreter
         self._parsobj = self.parse(script)
 
     @property
