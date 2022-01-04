@@ -40,4 +40,4 @@ class OttoScript:
                 for command in commands:
                     command.eval()
             else:
-                self.interpreter.log_info(f"Condition Failed: {condition}")
+                self.interpreter.log_info(f"Condition Failed: {conditions}")
