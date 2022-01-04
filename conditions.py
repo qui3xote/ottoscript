@@ -65,10 +65,12 @@ class IfClause(BaseCondition):
 
 
     async def eval(self):
-         return await self.eval_tree(self._eval_tree)
+        await self.interpreter.log_info('In ifclause eval')
+        return await self.eval_tree(self._eval_tree)
 
 
     async def eval_tree(self, tree):
+        await self.interpreter.log_info('In ifclause eval_tree')
         statements = []
         strings = []
 
