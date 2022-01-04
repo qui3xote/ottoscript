@@ -34,7 +34,7 @@ class OttoScript:
         return self._parsobj.when[0]
 
     def execute(self):
-        for conditions, commands in self.condition_clauses.as_list():
+        for conditions, commands in self._parsobj.condition_clauses.as_list():
             if conditions.eval() == True:
                 for command in commands:
                     command.eval()
