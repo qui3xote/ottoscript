@@ -68,14 +68,14 @@ class IfClause(BaseCondition):
 
         for item in tree['items']:
             if type(item) == dict:
-                statements.append(self.eval_tree(item))
+                statements.append(await self.eval_tree(item))
             if type(item) == Comparison:
-                result = item.eval()
+                result = await item.eval()
                 statements.append(result)
                 strings.append(f"\n{item}: {result}")
 
         result = tree['opfunc'](statements)
-        await self.interpreter.log_debug(f"If clause result: {result}: {strings}")
+        await self.interpreter.log_info(f"If clause result: {result}: {strings}")
         return result
 
     def build_evaluator_tree(self):
