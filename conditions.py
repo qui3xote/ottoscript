@@ -1,6 +1,6 @@
 import operator as op
 from pyparsing import *
-from ottolib.vocab import *
+from ottoscript.vocab import *
 
 
 class Comparison(BaseVocab):
@@ -22,17 +22,22 @@ class Comparison(BaseVocab):
         self._operators = type(self)._operators
         self._opfunc = self._operators[self._operand]
 
+    def __str__(self):
+        return ' '.join([str(x) for x in self.tokens])
+
     @property
     def value(self):
-        return self._opfunc(self._left[0].value, self._right[0].value)
+        return self._opfunc(self._left.value, self._right.value)
 
-    def eval(self):
-        result = self.value
-        msg = f"""{result}: {_self._opfunc.__name__}
-                left({str(self._left[0])}, value={self._left[0].value})
-                right({str(self._right[0])}, value={self._right[0].value})"""
-        self._log_func(msg, 'debug')
-        return self.value
+    async def eval(self):
+        left = await self._left.eval()
+        right = await self._right.eval()
+        result = self._opfunc(left, right)
+        await self.interpreter.log_info(f"Condition {result}: {self._opfunc} \
+                                            ({left}, {str(self._left)}) \
+                                            ({right}, {str(self._right)}) ")
+        return result
+
 
 class BaseCondition(BaseVocab):
     pass
@@ -53,35 +58,50 @@ class IfClause(BaseCondition):
 
     def __init__(self,tokens):
         super().__init__(tokens)
-        self._eval = type(self).build_evaluator(self._conditions)
+        self._eval_tree = self.build_evaluator_tree()
 
-    @property
-    def value(self):
-        return self._eval()
+    def __str__(self):
+        return " ".join([str(x) for x in self.tokens])
 
-    @classmethod
-    def build_evaluator(cls, tokens):
-        if type(tokens) == Comparison:
-            tokens = ["AND", tokens]
+
+    async def eval(self):
+        await self.interpreter.log_info('In ifclause eval')
+        result = await self.eval_tree(self._eval_tree)
+        return result
+
+
+    async def eval_tree(self, tree):
+        await self.interpreter.log_info('In ifclause eval_tree')
+        statements = []
+        strings = []
+
+        for item in tree['items']:
+            if type(item) == dict:
+                statements.append(await self.eval_tree(item))
+            if type(item) == Comparison:
+                result = await item.eval()
+                statements.append(result)
+                strings.append(f"\n{item}: {result}")
+
+        result = tree['opfunc'](statements)
+        await self.interpreter.log_info(f"If clause result: {result}: {strings}")
+        return result
+
+    def build_evaluator_tree(self):
+        if type(self._conditions) == Comparison:
+            tokens = ["AND", self._conditions]
+        else:
+            tokens = self._conditions
 
         comparisons = []
-        comparison_strings = []
 
         for item in tokens:
             if type(item) == list:
-                comparisons.append(cls.build_evaluator(item))
+                comparisons.append(self.build_evaluator_tree(item))
             elif type(item) == str:
                 opname = item.upper()
-                operand = cls._operators[opname]
+                operand = self._operators[opname]
             else:
-                comparisons.append(item.eval)
-                comparison_strings.append(item)
+                comparisons.append(item)
 
-        def _eval():
-            result = operand([x() for x in comparisons])
-            if result == False:
-                msg = f"If condition failed: {opname} {comparison_strings}"
-                self._log_func(msg, 'debug')
-            return result
-
-        return _eval
+        return {'opfunc': operand, 'items': comparisons}
