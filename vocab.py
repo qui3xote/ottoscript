@@ -1,12 +1,20 @@
 import os
 from pyparsing import *
+from pyparsing import common
 
-digit = Char(nums)
-digits = Combine(OneOrMore(digit)).set_parse_action(lambda x: int(x[0]))
-real_num = Combine(digits + Literal(".") + digits).set_parse_action(lambda x: float(x[0]))
-ident = Word(alphanums + '_')
+### Keywords
+WHEN = CaselessKeyword('WHEN')
+IF = CaselessKeyword('IF')
+THEN = CaselessKeyword('THEN')
+ELSE = CaselessKeyword('ELSE')
+FROM = CaselessKeyword('TO')
+WITH = CaselessKeyword('WITH')
+IS = CaselessKeyword('IS')
+FOR = CaselessKeyword('FOR')
+TRUE = CaselessKeyword('TRUE')
+CHANGES = CaselessKeyword('CHANGES')
 
-
+### Classes
 class BaseVocab:
     _parser = None
     _value = None
@@ -56,7 +64,7 @@ class StringValue(BaseVocab):
 
 class Numeric(BaseVocab):
 
-    _parser = Combine(Optional('-') + (real_num | digits)("_value"))
+    _parser = common.number("_value")
 
     def __str__(self):
         return f"{self._value}"
@@ -85,18 +93,12 @@ class Second(BaseVocab):
 
 
 class TimeStamp(BaseVocab):
-    _parser = Group(digit * 2)("_hours") + ":" + Group(digit * 2)("_minutes") + ":" +  Group(digit * 2)("_seconds")
-
-    def __str__(self):
-        return f"value: {self.as_string}"
+    _digits = Combine(Char(nums) * 2).set_parse_action(lambda x: int(x[0]))
+    _parser = _digits("_hours") + ":" + _digits("_minutes") + ":" +  _digits("_seconds")
 
     @property
     def as_seconds(self):
         return self._hours * 3600 + self._minutes * 60 + self._seconds
-
-    @property
-    def as_string(self):
-        return ''.join(self.tokens)
 
 
 
@@ -107,15 +109,19 @@ class RelativeTime(BaseVocab):
     def as_seconds(self):
         return self._count.value * self._unit.as_seconds
 
+    @property
+    def value(self):
+        return self.as_seconds
 
 term = Or([x.parser() for x in BaseVocab.__subclasses__()])
 
 
 class Entity(BaseVocab):
-    _parser = ident("_domain") + Group(OneOrMore(Literal(".").suppress() + ident))("_id") + Optional(":" + ident("_attribute"))
+    _parser = common.identifier("_domain") + Literal(".") + common.identifier("_id") + Optional(":" + common.identifier("_attribute"))
 
     def __str__(self):
-        return f"{self.domain}{self.name}.{self.attribute}"
+        attribute = f":{self.attribute}" if self.attribute is not None else ''
+        return f"{self.domain}.{self.id}{attribute}"
 
     async def eval(self):
         self._value = await self.interpreter.get_state(self.name)
@@ -123,7 +129,7 @@ class Entity(BaseVocab):
 
     @property
     def id(self):
-        return ".".join(self._id)
+        return self._id
 
     @property
     def domain(self):
@@ -153,7 +159,7 @@ class Var(BaseVocab):
         self._value = None
 
     def __str__(self):
-        return f"{self._value}"
+        return f"{''.join(self.tokens)}"
 
     @property
     def name(self):
