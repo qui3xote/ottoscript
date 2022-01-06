@@ -1,15 +1,17 @@
 import sys
 from pyparsing import *
-from ottoscript.vocab import *
+from .vocab import *
+from .expressions import *
 
 
-class BaseTrigger(BaseVocab):
+class Trigger(OttoBase):
     _parser = None
 
     def __str__(self):
         return f"{self.tokens[0]}:{' '.join(self.tokens[1:])}"
 
-class StateChange(BaseTrigger):
+class StateChange(Trigger):
+    term = Or(Vocab.child_parsers())
     _parser =  Entity.parser()("_entity") \
         + CaselessKeyword("CHANGES") \
         + Optional(CaselessKeyword("FROM") + term("_old")) \
