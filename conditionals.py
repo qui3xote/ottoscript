@@ -1,48 +1,16 @@
-import operator as op
 from pyparsing import *
-from ottoscript.vocab import *
+from .vocab import *
+from .expressions import *
+from .commands import *
 
 
-class Comparison(BaseVocab):
-    _operators = {
-                    '<': op.lt,
-                    '<=': op.le,
-                    '>': op.gt,
-                    '>=': op.ge,
-                    '!=': op.ne,
-                    '==': op.eq
-                    }
-    _term = StringValue.parser() | Numeric.parser() | Var.parser() | Entity.parser()
-    _parser = _term("_left") \
-        + one_of([x for x in _operators.keys()])("_operand") \
-        + _term("_right")
-
-    def __init__(self,tokens):
-        super().__init__(tokens)
-        self._operators = type(self)._operators
-        self._opfunc = self._operators[self._operand]
+class Conditional(OttoBase):
 
     def __str__(self):
-        return ' '.join([str(x) for x in self.tokens])
-
-    @property
-    def value(self):
-        return self._opfunc(self._left.value, self._right.value)
-
-    async def eval(self):
-        left = await self._left.eval()
-        right = await self._right.eval()
-        result = self._opfunc(left, right)
-        await self.interpreter.log_info(f"Condition {result}: {self._opfunc} \
-                                            ({left}, {str(self._left)}) \
-                                            ({right}, {str(self._right)}) ")
-        return result
+        return f"{' '.join(self.tokens)}"
 
 
-class BaseCondition(BaseVocab):
-    pass
-
-class IfClause(BaseCondition):
+class IfClause(Conditional):
     _operators = {
                     'AND': all,
                     'OR': any,

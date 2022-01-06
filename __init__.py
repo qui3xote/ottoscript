@@ -1,25 +1,23 @@
 from pyparsing import *
-from ottoscript.vocab import *
-from ottoscript.commands import *
-from ottoscript.teststrings import *
-from ottoscript.conditions import *
-from ottoscript.triggers import *
+from .vocab import *
+#from .expressions import *
+from .commands import Command
+from .conditionals import Conditional
+from .triggers import Trigger
 
 
 class OttoScript:
-    command = Or([cls.parser() for cls in BaseCommand.__subclasses__()])
-    trigger = Or([cls.parser() for cls in BaseTrigger.__subclasses__()])
-    condition = Or([cls.parser() for cls in BaseCondition.__subclasses__()])
-
-    WHEN, THEN = map(CaselessKeyword, ["WHEN", "THEN"])
+    command = Or(Command.child_parsers())
+    trigger = Or(Trigger.child_parsers())
+    conditional = Or(Conditional.child_parsers())
 
     when_expr = WHEN.suppress() + Group(trigger)("when")
     then_clause = THEN.suppress() + Group(OneOrMore(command))("actions")
-    conditionclause = condition("conditions") + then_clause
+    conditionclause = conditional("conditions") + then_clause
     _parser = when_expr + OneOrMore(Group(conditionclause))("condition_clauses")
 
     def __init__(self, interpreter, script):
-        BaseVocab.set_interpreter(interpreter)
+        OttoBase.set_interpreter(interpreter)
         self.interpreter = interpreter
         self._parsobj = self.parse(script)
 
