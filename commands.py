@@ -1,19 +1,27 @@
 import sys
 from pyparsing import *
 from ottoscript.vocab import *
+from ottoscript.expressions import *
 #from utils import add_subclasses_parseres_to_scope
 
-class BaseCommand(BaseVocab):
+class Command(OttoBase):
     _kwd = None
 
     def __str__(self):
         return f"command(values)"
 
-    def run(self):
-        return print(str(self))
+    async def eval(self):
+        result = await self.interpreter.log_info("Command")
 
 
-class Set(BaseCommand):
+class Pass(Command):
+    _kwd = CaselessKeyword("PASS")
+    _parser = _kwd
+
+    async def eval(self):
+        result = await self.interpreter.log_info("Passing")
+
+class Set(Command):
     _kwd = CaselessKeyword("SET")
     _parser = _kwd + (Entity.parser()("_entity") | Var.parser()("_var")) + (CaselessKeyword("TO") | "=") + (Var.parser() | Numeric.parser() | StringValue.parser())("_newvalue")
 
@@ -24,7 +32,7 @@ class Set(BaseCommand):
         result = await self.interpreter.set_state(self._entity.name, value=self._newvalue)
         return result
 
-class Wait(BaseCommand):
+class Wait(Command):
     _kwd = CaselessKeyword("WAIT")
     _parser = _kwd + (TimeStamp.parser() | RelativeTime.parser())("_time")
 
@@ -35,7 +43,7 @@ class Wait(BaseCommand):
         result = await self.interpreter.sleep(self._time.as_seconds)
         return result
 
-class Turn(BaseCommand):
+class Turn(Command):
     _kwd = CaselessKeyword("TURN")
     _parser = _kwd + (CaselessKeyword("ON") | CaselessKeyword("OFF"))('_newstate') + Entity.parser()("_entity")
 
@@ -45,7 +53,7 @@ class Turn(BaseCommand):
         result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
         return result
 
-class Toggle(BaseCommand):
+class Toggle(Command):
     _kwd = CaselessKeyword("TOGGLE")
     _parser = _kwd + Entity.parser()("_entity")
 
@@ -56,7 +64,7 @@ class Toggle(BaseCommand):
         return result
 
 
-class Dim(BaseCommand):
+class Dim(Command):
     _kwd = CaselessKeyword("DIM")
     _parser = _kwd + Entity.parser()("_entity") + \
         (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") + (Var.parser() | Numeric.parser())("_number") + Optional('%')("_use_pct")
@@ -83,7 +91,7 @@ class Dim(BaseCommand):
         result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
         return result
 
-class Lock(BaseCommand):
+class Lock(Command):
     _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK"))
     _parser = _kwd("_type") + Entity.parser()("_entity") \
             + Optional(CaselessKeyword("WITH") \
