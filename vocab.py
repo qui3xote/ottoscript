@@ -14,15 +14,22 @@ IS = CaselessKeyword('IS')
 FOR = CaselessKeyword('FOR')
 TRUE = CaselessKeyword('TRUE')
 CHANGES = CaselessKeyword('CHANGES')
+AND = CaselessKeyword('AND')
+OR = CaselessKeyword('OR')
+NOT = CaselessKeyword('NOT')
+END = CaselessKeyword('END')
+CASE = CaselessKeyword('CASE')
 
 ### Classes
 class Vocab(OttoBase):
 
     def __str__(self):
-        return f"{''.join(self.tokens)}"
+        return f"{''.join([str(x) for x in self.tokens])}"
+
 
 class StringValue(Vocab):
-    _parser = QuotedString("'",unquoteResults=True)("_value")
+    _parser = QuotedString(quote_char="'",unquoteResults=True)("_value") \
+                | QuotedString(quote_char='"',unquoteResults=True)("_value")
 
 class Numeric(Vocab):
 

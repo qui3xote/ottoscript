@@ -1,45 +1,58 @@
 from pyparsing import *
 from .vocab import *
-from .expressions import *
+from .expressions import Comparison
 from .commands import *
 
 
 class Conditional(OttoBase):
+    forward = Forward()
 
     def __str__(self):
-        return f"{' '.join(self.tokens)}"
+        return " ".join([str(x) for x in self.tokens])
 
 
-class IfClause(Conditional):
+
+class Then(Conditional):
+    _valid_instructions = Or(Command.child_parsers())
+    _parser = THEN + OneOrMore(_valid_instructions)("_commands")
+
+    async def eval(self):
+        if type(self._commands) != list:
+            await self._commands.eval()
+            return
+
+        for command in self._commands:
+            await command.eval()
+            return
+
+
+class If(Conditional):
     _operators = {
                     'AND': all,
                     'OR': any,
                     'NOT': lambda x: not x
                     }
 
-    AND, OR, NOT, IF = map(CaselessKeyword,"AND OR NOT IF".split())
-    _parser = IF + infixNotation(Comparison.parser(), [
-                            ("NOT", 1, opAssoc.RIGHT, ),
-                            ("AND", 2, opAssoc.LEFT, ),
-                            ("OR", 2, opAssoc.LEFT, ),
+    _parser = IF \
+            + infixNotation(Comparison.parser(), [
+                            (NOT, 1, opAssoc.RIGHT, ),
+                            (AND, 2, opAssoc.LEFT, ),
+                            (OR, 2, opAssoc.LEFT, ),
                             ])("_conditions")
+
 
     def __init__(self,tokens):
         super().__init__(tokens)
         self._eval_tree = self.build_evaluator_tree()
 
-    def __str__(self):
-        return " ".join([str(x) for x in self.tokens])
-
-
     async def eval(self):
-        await self.interpreter.log_info('In ifclause eval')
+        await self.interpreter.log_debug('In ifclause eval')
         result = await self.eval_tree(self._eval_tree)
         return result
 
 
     async def eval_tree(self, tree):
-        await self.interpreter.log_info('In ifclause eval_tree')
+        await self.interpreter.log_debug('In ifclause eval_tree')
         statements = []
         strings = []
 
@@ -73,3 +86,51 @@ class IfClause(Conditional):
                 comparisons.append(item)
 
         return {'opfunc': operand, 'items': comparisons}
+
+class IfThen(Conditional):
+    _parser = If.parser()("_if") \
+            + Then.parser()("_then")
+
+    async def eval(self):
+        conditions_result = await self._if.eval()
+        if conditions_result == True:
+            await self._then.eval()
+            return True
+
+
+class IfThenElse(Conditional):
+    _parser = If.parser()("_if") \
+            + Optional(Conditional.forward("_conditional")) \
+            + Optional(Then.parser()("_then")) \
+            + Optional(ELSE + Conditional.forward("_else"))
+
+    async def eval(self):
+        conditions_result = await self._if.eval()
+        if conditions_result == True:
+            if hasattr(self,"_conditional"):
+                await self._conditional.eval()
+            if hasattr(self,"_then"):
+                await self._then.eval()
+        else:
+            if hasattr(self,"_else"):
+                await self._else.eval()
+
+
+class Case(Conditional):
+    _parser = CASE  \
+            + OneOrMore(IfThen.parser())("_statements") \
+            + Optional(ELSE + Then.parser()("_else")) \
+            + END
+
+    async def eval(self):
+        foundmatch = False
+        for statement in self._statements:
+            if await statement.eval() == True:
+                foundmatch = True
+                break
+
+        if foundmatch == False:
+            if hasattr(self,'_else'):
+                await self._else.eval()
+
+Conditional.forward <<= Or(IfThenElse.parser(), Case.parser())

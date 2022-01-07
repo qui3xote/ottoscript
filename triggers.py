@@ -8,7 +8,9 @@ class Trigger(OttoBase):
     _parser = None
 
     def __str__(self):
-        return f"{self.tokens[0]}:{' '.join(self.tokens[1:])}"
+        return " ".join([str(x) for x in self.tokens])
+
+
 
 class StateChange(Trigger):
     term = Or(Vocab.child_parsers())
