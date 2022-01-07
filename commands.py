@@ -14,6 +14,13 @@ class Command(OttoBase):
         result = await self.interpreter.log_info("Command")
 
 
+class Pass(Command):
+    _kwd = CaselessKeyword("PASS")
+    _parser = _kwd
+
+    async def eval(self):
+        result = await self.interpreter.log_info("Passing")
+
 class Set(Command):
     _kwd = CaselessKeyword("SET")
     _parser = _kwd + (Entity.parser()("_entity") | Var.parser()("_var")) + (CaselessKeyword("TO") | "=") + (Var.parser() | Numeric.parser() | StringValue.parser())("_newvalue")

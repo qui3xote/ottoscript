@@ -56,5 +56,5 @@ class Comparison(Expression):
         right = await self._right.eval()
         result = self._opfunc(left, right)
         msg = f"Condition {result}: {self._opfunc.__name__} ({left}, {str(self._left)}) ({right}, {str(self._right)}) "
-        await self.interpreter.log_info(msg)
+        await self.interpreter.log_debug(msg)
         return result

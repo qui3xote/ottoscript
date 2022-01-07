@@ -1,13 +1,14 @@
 class ExampleInterpreter:
 
-    def __init__(self, log_id='Test'):
+    def __init__(self, log_id='Test', debug_as_info=True):
         self.log_id = log_id
+        self.debug_as_info = debug_as_info
 
     async def set_state(self, entity_name, value=None, new_attributes=None, kwargs=None):
-        await self.log_info("state.set(entity_name={entity_name}, \
-                            value={value}, \
-                            new_attributes={new_attributes}, \
-                            kwargs = **{kwargs})")
+        await self.log_info(f"state.set(entity_name={entity_name}," \
+                            + f" value={value}," \
+                            + f" new_attributes={new_attributes}," \
+                            + f" kwargs = **{kwargs})")
 
     async def get_state(self, entity_name):
         await self.log_info(f"Getting State of {entity_name}")
@@ -24,13 +25,13 @@ class ExampleInterpreter:
         print(f'INFO: {self.log_id} {message}')
 
     async def log_error(self, message):
-        log.error(f'ERROR: {self.log_id} {message}')
+        print(f'Error: {self.log_id} {message}')
 
     async def log_warning(self, message):
-        log.warning(f'WARNING: {self.log_id} {message}')
+        print(f'Warning: {self.log_id} {message}')
 
     async def log_debug(self, message):
-        if DEBUG_AS_INFO:
-            log.info(message)
+        if self.debug_as_info:
+            print(f'DEBUG: {self.log_id} {message}')
         else:
-            log.debug(message)
+            pass
