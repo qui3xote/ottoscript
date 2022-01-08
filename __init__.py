@@ -1,22 +1,21 @@
-from pyparsing import *
-from .vocab import *
-from .expressions import *
-from .commands import Command
-from .conditionals import Conditional, IfThenElse, Then, Case
+from pyparsing import Or, Group, OneOrMore
+from .vocab import WHEN
+from .conditionals import IfThenElse, Then, Case
 from .triggers import Trigger
+from .ottobase import OttoBase
 
 
 class OttoScript:
     trigger = Or(Trigger.child_parsers())
     conditionals = (IfThenElse.parser() | Case.parser())
     when_expr = WHEN.suppress() + Group(trigger)("when")
-    _parser = when_expr + (OneOrMore(conditionals) | Then.parser())("condition_clauses")
+    _parser = when_expr + \
+        (OneOrMore(conditionals) | Then.parser())("condition_clauses")
 
     def __init__(self, interpreter, script):
         OttoBase.set_interpreter(interpreter)
         self.interpreter = interpreter
         self._parsobj = self.parse(script)
-
 
     @property
     def parser(self):
@@ -34,3 +33,4 @@ class OttoScript:
         for conditions in self._parsobj.condition_clauses.as_list():
             await self.interpreter.log_info("In loop")
             result = await conditions.eval()
+            return result
