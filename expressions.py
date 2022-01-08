@@ -72,16 +72,16 @@ class Comparison(Expression):
 
 
 class Assignment(Expression):
-
     _terms = (StringValue.parser()
               | Numeric.parser()
               | Var.parser()
               | Entity.parser())
-    _parser = Var.parser() + Literal('=').suppress() + _terms("_right")
+    _parser = Var.parser()('_variable') \
+        + Literal('=').suppress() \
+        + _terms("_right")
 
     def __str__(self):
         return ' '.join([str(x) for x in self.tokens])
 
-    @property
-    def value(self):
-        return self._opfunc(self._left.value, self._right.value)
+    async def eval(self):
+        self._variable.value = self._right

@@ -86,7 +86,10 @@ class TimeStamp(Vocab):
 
 
 class Entity(Vocab):
-    _parser = common.identifier("_domain") + Literal(".") + common.identifier("_id") + Optional(":" + common.identifier("_attribute"))
+    _parser = common.identifier("_domain") \
+        + Literal(".") \
+        + common.identifier("_id") \
+        + Optional(":" + common.identifier("_attribute"))
 
     def __str__(self):
         attribute = f":{self.attribute}" if self.attribute is not None else ''
@@ -122,11 +125,11 @@ class Entity(Vocab):
 
 class Var(Vocab):
     _validvar = Word('@', alphanums+'_')
-    _parser = _validvar("_name")
+    _parser = _validvar("_id")
 
     @property
     def name(self):
-        return self._name
+        return self._id
 
     @property
     def value(self):
