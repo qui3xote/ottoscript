@@ -1,5 +1,5 @@
 import operator as op
-from pyparsing import one_of, Literal, Group
+from pyparsing import one_of, Literal
 
 from .ottobase import OttoBase
 from .vocab import StringValue, Numeric, Var, Entity, Hour, Minute, Second
