@@ -1,5 +1,5 @@
 import operator as op
-from pyparsing import one_of, Literal
+from pyparsing import one_of, Literal, Group
 
 from .ottobase import OttoBase
 from .vocab import StringValue, Numeric, Var, Entity, Hour, Minute, Second
@@ -76,12 +76,12 @@ class Assignment(Expression):
               | Numeric.parser()
               | Var.parser()
               | Entity.parser())
-    _parser = Var.parser()('_variable') \
-        + Literal('=').suppress() \
+    _parser = Var.parser()("_left") \
+        + Literal('=') \
         + _terms("_right")
 
     def __str__(self):
         return ' '.join([str(x) for x in self.tokens])
 
     async def eval(self):
-        self._variable.value = self._right
+        self._left.value = self._right

@@ -8,7 +8,8 @@ from pyparsing import (
     alphanums,
     nums,
     Literal,
-    Optional
+    Optional,
+    Group
 )
 from pyparsing import common
 
@@ -124,12 +125,18 @@ class Entity(Vocab):
 
 
 class Var(Vocab):
-    _validvar = Word('@', alphanums+'_')
-    _parser = _validvar("_id")
+    _parser = Group(Word("@", alphanums+'_')("_name"))
+
+    def __init__(self, tokens):
+        # This is an annoying hack to force
+        # Pyparsing to preserve the namespace.
+        # It undoes the 'Group' in the parser.
+        tokens = tokens[0]
+        super().__init__(tokens)
 
     @property
     def name(self):
-        return self._id
+        return self._name
 
     @property
     def value(self):
