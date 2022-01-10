@@ -1,3 +1,4 @@
+from pyparsing import CaselessKeyword
 
 
 class OttoBase:
@@ -21,13 +22,16 @@ class OttoBase:
     def __str__(self):
         return f"{''.join([str(x) for x in self.tokens])}"
 
-    def debugtree(self):
+    def debugtree(self, levels=5):
+        if levels == 0:
+            return {'type': type(self), 'string': 'Level Limit Reached'}
+
         dictionary = {'type': type(self), 'string': str(self)}
         for k, v in self.dictionary.items():
-            if type(v) in (str, list, int, float):
+            if type(v) in (str, list, int, float, CaselessKeyword):
                 dictionary[k] = v
             else:
-                dictionary[k] = v.debugtree()
+                dictionary[k] = v.debugtree(levels=levels-1)
         return dictionary
 
     async def eval(self):

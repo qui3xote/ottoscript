@@ -1,7 +1,7 @@
 from pyparsing import Or, OneOrMore, opAssoc, infixNotation, Forward, Optional
 from .ottobase import OttoBase
 from .vocab import IF, AND, OR, NOT, THEN, ELSE, CASE, END
-from .expressions import Comparison
+from .expressions import Comparison, Assignment
 from .commands import Command
 
 
@@ -13,8 +13,9 @@ class Conditional(OttoBase):
 
 
 class Then(Conditional):
-    _valid_instructions = Or(Command.child_parsers())
-    _parser = THEN + OneOrMore(_valid_instructions)("_commands")
+    _instructions = Or(Command.child_parsers())
+    _assignment = Assignment.parser()
+    _parser = THEN + OneOrMore(_instructions | _assignment)("_commands")
 
     async def eval(self):
         if type(self._commands) != list:

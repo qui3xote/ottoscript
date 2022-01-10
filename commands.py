@@ -1,7 +1,7 @@
-from pyparsing import CaselessKeyword
+from pyparsing import CaselessKeyword, Optional
 from .ottobase import OttoBase
-from .vocab import Var, Numeric, Entity
-from .expressions import TimeStamp, RelativeTime
+from .vocab import Var, Numeric, Entity, TimeStamp, StringValue
+from .expressions import RelativeTime
 
 
 class Command(OttoBase):
@@ -33,7 +33,7 @@ class Set(Command):
 
     async def eval(self):
         result = await self.interpreter.set_state(self._entity.name,
-                                                  value=self._newvalue)
+                                                  value=self._newvalue.value)
         return result
 
 

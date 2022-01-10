@@ -32,5 +32,4 @@ class OttoScript:
         await self.interpreter.log_info("Executing")
         for conditions in self._parsobj.condition_clauses.as_list():
             await self.interpreter.log_info("In loop")
-            result = await conditions.eval()
-            return result
+            await conditions.eval()
