@@ -15,7 +15,8 @@ class Conditional(OttoBase):
 class Then(Conditional):
     _instructions = Or(Command.child_parsers())
     _assignment = Assignment.parser()
-    _parser = THEN + OneOrMore(_instructions | _assignment)("_commands")
+    _parser = Optional(THEN) \
+        + OneOrMore(_instructions | _assignment)("_commands")
 
     async def eval(self):
         if type(self._commands) != list:

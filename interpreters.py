@@ -4,10 +4,15 @@ class ExampleInterpreter:
         self.log_id = log_id
         self.debug_as_info = debug_as_info
 
-    async def set_state(self, entity_name, value=None, new_attributes=None, kwargs=None):
-        await self.log_info(f"state.set(entity_name={entity_name}," \
-                            + f" value={value}," \
-                            + f" new_attributes={new_attributes}," \
+    async def set_state(self,
+                        entity_name,
+                        value=None,
+                        new_attributes=None,
+                        kwargs=None):
+
+        await self.log_info(f"state.set(entity_name={entity_name},"
+                            + f" value={value},"
+                            + f" new_attributes={new_attributes},"
                             + f" kwargs = **{kwargs})")
 
     async def get_state(self, entity_name):
@@ -16,9 +21,10 @@ class ExampleInterpreter:
         # return 1 because it can be used to test >, =, etc.
 
     async def call_service(self, domain, service_name, kwargs):
-        await self.log_info(f"service.call({domain}, {service_name}, **{kwargs}))")
+        message = f"service.call({domain}, {service_name}, **{kwargs}))"
+        await self.log_info(message)
 
-    async def sleep(self,seconds):
+    async def sleep(self, seconds):
         await self.log_info(f"task.sleep({seconds}))")
 
     async def log_info(self, message):
