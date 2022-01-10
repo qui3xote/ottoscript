@@ -1,9 +1,21 @@
-import os
-from pyparsing import *
+from pyparsing import (
+    CaselessKeyword,
+    QuotedString,
+    Or,
+    Combine,
+    Word,
+    Char,
+    alphanums,
+    nums,
+    Literal,
+    Optional,
+    Group
+)
 from pyparsing import common
+
 from .ottobase import OttoBase
 
-### Keywords
+# Keywords
 WHEN = CaselessKeyword('WHEN')
 IF = CaselessKeyword('IF')
 THEN = CaselessKeyword('THEN')
@@ -20,7 +32,7 @@ NOT = CaselessKeyword('NOT')
 END = CaselessKeyword('END')
 CASE = CaselessKeyword('CASE')
 
-### Classes
+
 class Vocab(OttoBase):
 
     def __str__(self):
@@ -28,11 +40,11 @@ class Vocab(OttoBase):
 
 
 class StringValue(Vocab):
-    _parser = QuotedString(quote_char="'",unquoteResults=True)("_value") \
-                | QuotedString(quote_char='"',unquoteResults=True)("_value")
+    _parser = QuotedString(quote_char="'", unquoteResults=True)("_value") \
+                | QuotedString(quote_char='"', unquoteResults=True)("_value")
+
 
 class Numeric(Vocab):
-
     _parser = common.number("_value")
 
     def __str__(self):
@@ -40,36 +52,45 @@ class Numeric(Vocab):
 
 
 class Hour(Vocab):
-    _parser = Or(map(CaselessKeyword,["HOUR","HOUR"]))
+    _parser = Or(map(CaselessKeyword, ["HOUR", "HOUR"]))
 
     @property
     def as_seconds(self):
         return 3600
 
+
 class Minute(Vocab):
-    _parser = Or(map(CaselessKeyword,["MINUTE","MINUTES"]))
+    _parser = Or(map(CaselessKeyword, ["MINUTE", "MINUTES"]))
 
     @property
     def as_seconds(self):
         return 60
 
+
 class Second(Vocab):
-    _parser = Or(map(CaselessKeyword,["SECOND","SECONDS"]))
+    _parser = Or(map(CaselessKeyword, ["SECOND", "SECONDS"]))
 
     @property
     def as_seconds(self):
         return 1
 
+
 class TimeStamp(Vocab):
     _digits = Combine(Char(nums) * 2).set_parse_action(lambda x: int(x[0]))
-    _parser = _digits("_hours") + ":" + _digits("_minutes") + ":" +  _digits("_seconds")
+    _parser = _digits("_hours") \
+        + ":" + _digits("_minutes") \
+        + ":" + _digits("_seconds")
 
     @property
     def as_seconds(self):
         return self._hours * 3600 + self._minutes * 60 + self._seconds
 
+
 class Entity(Vocab):
-    _parser = common.identifier("_domain") + Literal(".") + common.identifier("_id") + Optional(":" + common.identifier("_attribute"))
+    _parser = common.identifier("_domain") \
+        + Literal(".") \
+        + common.identifier("_id") \
+        + Optional(":" + common.identifier("_attribute"))
 
     def __str__(self):
         attribute = f":{self.attribute}" if self.attribute is not None else ''
@@ -89,7 +110,7 @@ class Entity(Vocab):
 
     @property
     def attribute(self):
-        if hasattr(self,'_attribute'):
+        if hasattr(self, '_attribute'):
             return self._attribute
         else:
             return None
@@ -97,21 +118,21 @@ class Entity(Vocab):
     @property
     def name(self):
         if self.attribute is not None:
-            val = f"{self.domain}.{self._id}.{attribute}"
+            val = f"{self.domain}.{self._id}.{self.attribute}"
         else:
             val = f"{self.domain}.{self._id}"
         return val
 
+
 class Var(Vocab):
-    _parser = Word('@',alphanums+'_')
+    _parser = Group(Word("@", alphanums+'_')("_name"))
 
-    def __init__(self,tokens):
-        self.tokens = tokens
-        self._name = tokens[1:]
-        self._value = None
-
-    def __str__(self):
-        return f"{''.join(self.tokens)}"
+    def __init__(self, tokens):
+        # This is an annoying hack to force
+        # Pyparsing to preserve the namespace.
+        # It undoes the 'Group' in the parser.
+        tokens = tokens[0]
+        super().__init__(tokens)
 
     @property
     def name(self):
@@ -119,10 +140,8 @@ class Var(Vocab):
 
     @property
     def value(self):
-        return self._value.value
+        return self._vars[self.name].value
 
     @value.setter
     def value(self, new_value):
-        self._value = new_value
-
-#expressions
+        self._vars[self.name] = new_value
