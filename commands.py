@@ -1,14 +1,14 @@
 from pyparsing import CaselessKeyword, Optional
 from .ottobase import OttoBase
-from .vocab import Var, Numeric, Entity, TimeStamp, StringValue
-from .expressions import RelativeTime
+from .vocab import Var, Numeric, Entity, TimeStamp, StringValue, ON
+from .expressions import RelativeTime, With
 
 
 class Command(OttoBase):
     _kwd = None
 
     def __str__(self):
-        return f"command(values)"
+        return "command(values)"
 
     async def eval(self):
         result = await self.interpreter.log_info("Command")
@@ -52,8 +52,8 @@ class Wait(Command):
 class Turn(Command):
     _kwd = CaselessKeyword("TURN")
     _parser = _kwd + (CaselessKeyword("ON") |
-                        CaselessKeyword("OFF"))('_newstate') \
-                + Entity.parser()("_entity")
+                      CaselessKeyword("OFF"))('_newstate') \
+                   + Entity.parser()("_entity")
 
     async def eval(self):
         servicename = 'turn_'+self._newstate.lower()
@@ -109,17 +109,38 @@ class Dim(Command):
 class Lock(Command):
     _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK"))
     _parser = _kwd("_type") + \
-        Entity.parser()("_entity") \
-        + Optional(CaselessKeyword("WITH")
-                   + (Var.parser() | Numeric.parser())('_code'))
+        Entity.parser()("_entity") + Optional(With.parser()("_with"))
 
     async def eval(self):
         servicename = self._type.lower()
         kwargs = {'entity_id': self._entity.name}
 
-        if hasattr(self, '_code'):
-            kwargs['code'] += self._code.value
+        if hasattr(self, "_with"):
+            kwargs.update(self._with.value)
 
         result = await self.interpreter.call_service(self._entity.domain,
+                                                     servicename, kwargs)
+        return result
+
+
+class Call(Command):
+    _kwd = CaselessKeyword("CALL")
+    _parser = _kwd \
+        + Entity.parser()("_service") \
+        + Optional(ON + Entity.parser())("_entity") \
+        + Optional(With.parser()("_with"))
+
+    async def eval(self):
+        domain = self._service.domain.lower()
+        servicename = self._service.id.lower()
+        kwargs = {}
+
+        if hasattr(self, "_entity"):
+            kwargs['entity_id'] = self._entity.name
+
+        if hasattr(self, "_with"):
+            kwargs.update(self._with.value)
+
+        result = await self.interpreter.call_service(domain,
                                                      servicename, kwargs)
         return result
