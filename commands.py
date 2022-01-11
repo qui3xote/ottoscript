@@ -132,7 +132,7 @@ class Call(Command):
     _kwd = CaselessKeyword("CALL")
     _parser = _kwd \
         + Entity.parser()("_service") \
-        + Optional(ON + Entity.parser())("_entity") \
+        + Optional(ON + Entity.parser()("_entity")) \
         + Optional(With.parser()("_with"))
 
     def __str__(self):
