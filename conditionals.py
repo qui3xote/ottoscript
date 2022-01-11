@@ -16,16 +16,18 @@ class Then(Conditional):
     _instructions = Or(Command.child_parsers())
     _assignment = Assignment.parser()
     _parser = Optional(THEN) \
-        + OneOrMore(_instructions | _assignment)("_commands")
+        + OneOrMore(_instructions
+                    | _assignment
+                    | Conditional.forward)("_commands")
 
     async def eval(self):
+        await self.interpreter.log_info(f"{self._commands}")
         if type(self._commands) != list:
             await self._commands.eval()
-            return
-
-        for command in self._commands:
-            await command.eval()
-            return
+        else:
+            for command in self._commands:
+                await self.interpreter.log_info(f"{command}")
+                await command.eval()
 
 
 class If(Conditional):
@@ -92,7 +94,8 @@ class If(Conditional):
 
 class IfThen(Conditional):
     _parser = If.parser()("_if") \
-            + Then.parser()("_then")
+            + Then.parser()("_then") \
+            + END
 
     async def eval(self):
         conditions_result = await self._if.eval()
@@ -103,18 +106,16 @@ class IfThen(Conditional):
 
 class IfThenElse(Conditional):
     _parser = If.parser()("_if") \
-            + Optional(Conditional.forward("_conditional")) \
-            + Optional(Then.parser()("_then")) \
-            + Optional(ELSE + Conditional.forward("_else"))
+            + Then.parser()("_then") \
+            + Optional(ELSE + (Conditional.forward
+                               | Then.parser())("_else")) \
+            + END
 
     async def eval(self):
         conditions_result = await self._if.eval()
 
         if conditions_result is True:
-            if hasattr(self, "_conditional"):
-                await self._conditional.eval()
-            if hasattr(self, "_then"):
-                await self._then.eval()
+            await self._then.eval()
         else:
             if hasattr(self, "_else"):
                 await self._else.eval()
@@ -128,6 +129,7 @@ class Case(Conditional):
 
     async def eval(self):
         foundmatch = False
+
         for statement in self._statements:
             if await statement.eval() is True:
                 foundmatch = True

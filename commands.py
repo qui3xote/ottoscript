@@ -11,7 +11,7 @@ class Command(OttoBase):
         return "command(values)"
 
     async def eval(self):
-        result = await self.interpreter.log_info("Command")
+        await self.interpreter.log_info("Command")
 
 
 class Pass(Command):
@@ -19,7 +19,7 @@ class Pass(Command):
     _parser = _kwd
 
     async def eval(self):
-        result = await self.interpreter.log_info("Passing")
+        await self.interpreter.log_info("Passing")
 
 
 class Set(Command):
