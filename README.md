@@ -15,6 +15,7 @@ WHEN input_boolean.sleep CHANGES TO 'on'
    THEN
      TURN OFF lights.porch_sconce_lights
      LOCK lock.entry
+  END
 ```
 
 An automation specifies a trigger (`WHEN`) and a control structure (`IF` `THEN`) for deciding what conditions (`person.tom IS 'home'`) must be met before a sequence of commands are executed ```TURN OFF lights.porch_sconce_lights
@@ -28,18 +29,70 @@ WHEN _entity_ CHANGES (FROM _state_) (TO _state_)
 
 Example ```WHEN person.tom CHANGES TO 'home' or person.mywife CHANGES TO 'home'```
 
-A WHEN clause must be followed by one or more control structures (currently only if/then is supported). All control structures are evaluated regardless of whether the prior succeeded or failed. 
+A WHEN clause must be followed by one or more control structures (CASE and IF/THEN/ELSE are currently supported). All control structures are evaluated regardless of whether the prior succeeded or failed. (NB: This is unlike HA, where any failed condition will stop the remaining actions).
+
 ### IF
-IF _entity_ [operand] [value] (AND | OR | NOT) (_condition_)
+IF _entity_ [operand] _value_ (AND | OR | NOT) (_condition_) ... END
 
 Supported operands include standard mathematical notations ('=','<','>', etc) and `IS`.  Multiple conditions can be strung together using `AND`, `OR` and `NOT`, and parentheses can be used to control the order of evaluation. 
 
-Example ```IF light.office_lights:brightness_pct < 50 AND (binary_sensor.office_occupied = 'on' OR input_boolean.keep_the_lights_on IS 'on')```
+**EXAMPLE** 
+```
+IF light.office_lights:brightness_pct < 50 
+  AND (binary_sensor.office_occupied = 'on' OR input_boolean.keep_the_lights_on IS 'on')
+    THEN DIM light.office_lights to 100%
+    ELSE TURN OFF light.office_lights 
+  END
+```
 
 ### THEN
-THEN _command_
+(THEN) _command_ | _condition_
 
-THEN must be followed by one or more commands. All commands are run in sequence, and all are executed regardless of whether or not the prior commands succeed. 
+THEN must be followed by one or more commands or conditions, meaning that you can have nested logic (see example below). All commands are run in sequence, and all are executed regardless of whether or not the prior commands succeed. As of v0.2, the actual keyword THEN is optional. 
+
+**EXAMPLE**
+```
+THEN
+  TURN ON lights.main_lights
+  IF input_boolean.vacation_mode == 'off'
+    UNLOCK lock.front_door_lock
+ ```
+
+### CASE
+CASE IF _condition_ THEN _command_ END (ELSE _condition_ | _command_) END
+
+CASE operates similarly to HA 'choose' - IF/THEN statements are evaluated in order, and only the first true condition is executed. In the event that none of them are true, there is an optional 'ELSE' statement which is run. Note that `ELSE` statements are not allowed inside the CASE IF/THENS - only at the end.
+
+**EXAMPLE**
+```
+CASE
+  IF input_boolean.guest_mode == 'on'
+    CALL automation.trigger ON automation.welcome_guests
+  END
+  IF input_boolean.guest_mode == 'off'
+    CALL automation.trigger ON automation.welcome_family
+  END
+  ELSE
+    LOCK lock.front_door_lock
+    CALL automation.trigger ON automation.intruder_alert
+  END
+```
+
+### Commands
+
+Supported commands currently include:
+
+TURN ON/OFF _entity_
+TOGGLE _entity_
+DIM _light.entity_ (TO | BY)  (_number_ | _percent_)
+LOCK/UNLOCK _lock.entity_ (WITH (code=_code_))
+CALL _domain.servicename_ ON _entity_ (WITH (param1=_value_, param2=_value2_...))
+SET _entity_ (TO | =) _value_ 
+WAIT _number_ (SECONDS | MINUTES | HOURS)
+PASS 
+
+The CALL command allows you to call any service currently supported by HA, so in theory you never need the other commands, but they are 
+useful shortcuts - future versions will add more.
 
 
 # Extending the Language
@@ -47,7 +100,7 @@ OttoScript relies on PyParsing and heavy use of subclassing to handle the dirty 
 A standard OttoScript class includes a `_parser` class attribute which defines the grammar, and a class method `parser()`, which returns a pyparsing object, which will in turn return an instance of the class. In this way, you can build more complex structures by relying on existing grammar. 
 
 ### Interpreter
-`interpreter.py` contains an TestInterpreter which can be used for testing and debugging. (A 'live' interpreter can by found in the `ottopyscript` repository). The interpreter is responsible for translating OttoScript commands into live instructions to HASS (or, if someone wants to write one, a different home automation controller).
+`interpreter.py` contains an ExampleInterpreter which can be used for testing and debugging. (A 'live' interpreter can by found in the `ottopyscript` repository). The interpreter is responsible for translating OttoScript commands into live instructions to HASS (or, if someone wants to write one, a different home automation controller).
 
 ### vocab.py
 In addition to the base class and primitives, the `vocab` module defines smaller, reusable OttoScript snippets, such as the `RelativeTime` class:
@@ -75,6 +128,6 @@ class Toggle(BaseCommand):
         return result
 ```
 
-### Conditions
-Control structures (such as `IF`) are housed in conditions. The `eval` function is responsible for evaluating the contained conditions and returning True or False. 
+### Conditionals
+Control structures (such as `IF`) are housed in conditionals. The `eval` function is responsible for evaluating the contained conditions and returning True or False. 
 
