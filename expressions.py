@@ -1,8 +1,28 @@
 import operator as op
-from pyparsing import one_of, Literal
+from pyparsing import (one_of,
+                       Literal,
+                       delimited_list,
+                       Forward,
+                       Group,
+                       Optional,
+                       Or,
+                       dict_of,
+                       Suppress,
+                       Word,
+                       alphas,
+                       alphanums
+                       )
 
 from .ottobase import OttoBase
-from .vocab import StringValue, Numeric, Var, Entity, Hour, Minute, Second
+from .vocab import (WITH,
+                    StringValue,
+                    Numeric,
+                    Var,
+                    Entity,
+                    Hour,
+                    Minute,
+                    Second
+                    )
 
 
 class Expression(OttoBase):
@@ -85,3 +105,48 @@ class Assignment(Expression):
 
     async def eval(self):
         self._left.value = self._right
+
+
+class List(Expression):
+    _allowed_contents = Forward()
+    _contents = delimited_list(_allowed_contents, allow_trailing_delim=True)
+    _parser = Literal("(") + _contents("_value") + Literal(")")
+
+    @classmethod
+    def parser(cls, allowed=None):
+        if allowed is None:
+            allowed = Or([StringValue.parser(),
+                          Numeric.parser(),
+                          Entity.parser(),
+                          Var.parser()
+                          ])
+
+        cls._allowed_contents <<= allowed
+        return super().parser()
+
+
+class Dict(Expression):
+    _allowed_values = Or([StringValue.parser(),
+                          Numeric.parser(),
+                          Entity.parser(),
+                          Var.parser()
+                          ])
+    _attr_label = Word(alphas + '_', alphanums + '_')
+    _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
+    _dict = dict_of(_attr_label, _attr_value)
+    _parser = Literal("(") + _dict("_value") + Literal(")")
+
+    def __str__(self):
+        return str(self._value)
+
+    @property
+    def value(self):
+        return {key: value.value for key, value in self._value.items()}
+
+
+class With(Expression):
+    _parser = WITH + Group(Dict.parser())("_value")
+
+    @property
+    def value(self):
+        return self._value.value

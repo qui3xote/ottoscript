@@ -28,7 +28,7 @@ class OttoBase:
 
         dictionary = {'type': type(self), 'string': str(self)}
         for k, v in self.dictionary.items():
-            if type(v) in (str, list, int, float, CaselessKeyword):
+            if type(v) in (str, list, int, float, dict, CaselessKeyword):
                 dictionary[k] = v
             else:
                 dictionary[k] = v.debugtree(levels=levels-1)

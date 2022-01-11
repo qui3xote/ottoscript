@@ -31,6 +31,8 @@ OR = CaselessKeyword('OR')
 NOT = CaselessKeyword('NOT')
 END = CaselessKeyword('END')
 CASE = CaselessKeyword('CASE')
+TO = CaselessKeyword('TO')
+ON = CaselessKeyword('ON')
 
 
 class Vocab(OttoBase):
