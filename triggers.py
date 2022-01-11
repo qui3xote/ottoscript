@@ -1,6 +1,7 @@
 from pyparsing import CaselessKeyword, Or, Optional
 from .ottobase import OttoBase
-from .vocab import Entity, FROM, TO, FOR, Vocab, TimeStamp, RelativeTime
+from .vocab import Entity, FROM, TO, FOR, Vocab, TimeStamp
+from .expressions import RelativeTime
 
 
 class Trigger(OttoBase):
