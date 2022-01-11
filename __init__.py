@@ -10,7 +10,7 @@ class OttoScript:
     conditionals = (IfThenElse.parser() | Case.parser())
     when_expr = WHEN.suppress() + Group(trigger)("when")
     _parser = when_expr + \
-        (OneOrMore(conditionals) | Then.parser())("condition_clauses")
+        OneOrMore(conditionals | Then.parser())("condition_clauses")
 
     def __init__(self, interpreter, script):
         OttoBase.set_interpreter(interpreter)
