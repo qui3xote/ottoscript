@@ -94,6 +94,22 @@ PASS
 The CALL command allows you to call any service currently supported by HA, so in theory you never need the other commands, but they are 
 useful shortcuts - future versions will add more.
 
+### Variables
+As of v0.2, OttoScript supports variables! Variables can be assigned as part of any THEN block, and read in any subsequent command or conditions. Variables are denoted with the `@` symbol.
+
+**EXAMPLE**
+```
+WHEN input_select.home_mode CHANGES
+  CASE
+    IF imput_select.home_mode == 'evening'
+      @brightness = 50%
+    END
+    IF imput_select.home_mode == 'sleep'
+      @brightness = 30%
+    END
+    DIM lights.porch_lights to @brightness
+```
+
 
 # Extending the Language
 OttoScript relies on PyParsing and heavy use of subclassing to handle the dirty work of parsing scripts into usable objects. `vocab.py` establishes a few key primitives as simple pyparsing object (digits, identifiers, etc) and establishes the BaseVocab class from which everything else inherits. 
