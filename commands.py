@@ -55,6 +55,11 @@ class Turn(Command):
                       CaselessKeyword("OFF"))('_newstate') \
                    + Entity.parser()("_entity")
 
+    def __str__(self):
+        servicename = 'turn_'+self._newstate.lower()
+        kwargs = {'entity_id': self._entity.name}
+        return f"call_service({self._entity.domain}, {servicename}, {kwargs})"
+
     async def eval(self):
         servicename = 'turn_'+self._newstate.lower()
         kwargs = {'entity_id': self._entity.name}
@@ -127,8 +132,21 @@ class Call(Command):
     _kwd = CaselessKeyword("CALL")
     _parser = _kwd \
         + Entity.parser()("_service") \
-        + Optional(ON + Entity.parser())("_entity") \
+        + Optional(ON + Entity.parser()("_entity")) \
         + Optional(With.parser()("_with"))
+
+    def __str__(self):
+        domain = self._service.domain.lower()
+        servicename = self._service.id.lower()
+        kwargs = {}
+
+        if hasattr(self, "_entity"):
+            kwargs['entity_id'] = self._entity.name
+
+        if hasattr(self, "_with"):
+            kwargs.update(self._with.value)
+
+        return f"call_service({domain}, {servicename}, {kwargs})"
 
     async def eval(self):
         domain = self._service.domain.lower()
