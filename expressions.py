@@ -109,19 +109,26 @@ class Assignment(Expression):
 
 class List(Expression):
     _allowed_contents = Forward()
-    _contents = delimited_list(_allowed_contents, allow_trailing_delim=True)
-    _parser = Literal("(") + _contents("_value") + Literal(")")
+    _content = delimited_list(_allowed_contents)
+    _parser = Optional("(") + _content("_contents") + Optional(")")
+
+    @property
+    def contents(self):
+        if type(self._contents) != list:
+            return [self._contents]
+        else:
+            return self._contents
 
     @classmethod
-    def parser(cls, allowed=None):
-        if allowed is None:
-            allowed = Or([StringValue.parser(),
-                          Numeric.parser(),
-                          Entity.parser(),
-                          Var.parser()
-                          ])
-
-        cls._allowed_contents <<= allowed
+    def parser(cls, allowed_classes=None):
+        if allowed_classes is None:
+            allowed_classes = [StringValue,
+                               Numeric,
+                               Entity,
+                               Var
+                               ]
+        allowed = [x.parser() for x in allowed_classes]
+        cls._allowed_contents <<= Or(allowed)
         return super().parser()
 
 
@@ -134,7 +141,7 @@ class Dict(Expression):
     _attr_label = Word(alphas + '_', alphanums + '_')
     _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
     _dict = dict_of(_attr_label, _attr_value)
-    _parser = Literal("(") + _dict("_value") + Literal(")")
+    _parser = Optional(Literal("(")) + _dict("_value") + Optional(Literal(")"))
 
     def __str__(self):
         return str(self._value)

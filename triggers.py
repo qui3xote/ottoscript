@@ -1,7 +1,10 @@
-from pyparsing import CaselessKeyword, Or, Optional
+from pyparsing import (CaselessKeyword,
+                       Or,
+                       Optional,
+                       )
 from .ottobase import OttoBase
 from .vocab import Entity, FROM, TO, FOR, Vocab, TimeStamp
-from .expressions import RelativeTime
+from .expressions import RelativeTime, List
 
 
 class Trigger(OttoBase):
@@ -13,7 +16,7 @@ class Trigger(OttoBase):
 
 class StateChange(Trigger):
     term = Or(Vocab.child_parsers())
-    _parser = Entity.parser()("_entity") \
+    _parser = List.parser([Entity])("_entities") \
         + CaselessKeyword("CHANGES") \
         + Optional(FROM + term("_old")) \
         + Optional(TO + term("_new")) \
@@ -32,6 +35,40 @@ class StateChange(Trigger):
         return " and ".join(triggers)
 
     @property
-    def kwargs(self):
-        return {"state_hold": self._hold.as_seconds
-                if hasattr(self, '_hold') else None}
+    def hold_seconds(self):
+        if hasattr(self, '_hold'):
+            return self._hold.as_seconds
+        else:
+            return None
+
+    @property
+    def old(self):
+        if hasattr(self, "_old"):
+            return self._old.value
+        else:
+            return None
+
+    @property
+    def new(self):
+        if hasattr(self, "_new"):
+            return self._new.value
+        else:
+            return None
+
+    @property
+    def trigger_type(self):
+        return 'state_change'
+
+    @property
+    def value(self):
+        trigger_list = []
+        for e in self._entities.contents:
+            trigger = {"type": self.trigger_type,
+                       "entity": e.name,
+                       "old": self.old,
+                       "new": self.new,
+                       "hold_seconds": self.hold_seconds
+                       }
+            trigger_list.append(trigger)
+
+        return trigger_list
