@@ -127,7 +127,7 @@ class Entity(Vocab):
 
 
 class Var(Vocab):
-    _parser = Group(Word("@", alphanums+'_')("_name"))
+    _parser = Group(Word("@", alphanums+'_')("_varname"))
 
     def __init__(self, tokens):
         # This is an annoying hack to force
@@ -136,14 +136,20 @@ class Var(Vocab):
         tokens = tokens[0]
         super().__init__(tokens)
 
+    def __getattr__(self, name):
+        return getattr(self._vars[self.varname], name)
+
     @property
-    def name(self):
-        return self._name
+    def varname(self):
+        return self._varname
 
     @property
     def value(self):
-        return self._vars[self.name].value
+        return self._vars[self.varname].value
 
     @value.setter
     def value(self, new_value):
-        self._vars[self.name] = new_value
+        self._vars[self.varname] = new_value
+
+    async def eval(self):
+        return await self._vars[self.varname].eval()

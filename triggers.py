@@ -22,18 +22,6 @@ class StateChange(Trigger):
         + Optional(TO + term("_new")) \
         + Optional(FOR + (TimeStamp.parser() | RelativeTime.parser())("_hold"))
 
-    def __str__(self):
-        triggers = []
-        if hasattr(self, "_new"):
-            triggers.append(f"{self._entity.name} == '{self._new.value}'")
-        if hasattr(self, "_old"):
-            triggers.append(f"{self._entity.name}.old == '{self._old.value}'")
-
-        if len(triggers) == 0:
-            triggers = [f"{self._entity.name}"]
-
-        return " and ".join(triggers)
-
     @property
     def hold_seconds(self):
         if hasattr(self, '_hold'):
