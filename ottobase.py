@@ -51,11 +51,16 @@ class OttoBase:
 
     @classmethod
     def parser(cls):
+        cls._parser.set_name(cls.__name__)
         return cls._parser.set_parse_action(cls)
 
     @classmethod
     def set_interpreter(cls, interpreter):
         cls._interpreter = interpreter
+
+    @classmethod
+    def set_vars(cls, vars):
+        cls._vars.update(vars)
 
     @classmethod
     def from_string(cls, string):
