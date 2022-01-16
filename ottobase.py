@@ -1,4 +1,7 @@
-from pyparsing import CaselessKeyword
+from pyparsing import (CaselessKeyword,
+                       Word,
+                       alphanums,
+                       Group)
 
 
 class OttoBase:
@@ -20,7 +23,7 @@ class OttoBase:
                 self.dictionary[k] = v
 
     def __str__(self):
-        return f"{''.join([str(x) for x in self.tokens])}"
+        return f"{' '.join([str(x) for x in self.tokens.as_list()])}"
 
     def debugtree(self, levels=5):
         if levels == 0:
@@ -69,3 +72,32 @@ class OttoBase:
     @classmethod
     def child_parsers(cls):
         return [subclass.parser() for subclass in cls.__subclasses__()]
+
+
+class Var(OttoBase):
+    _parser = Group(Word("@", alphanums+'_')("_varname"))
+
+    def __init__(self, tokens):
+        # This is an annoying hack to force
+        # Pyparsing to preserve the namespace.
+        # It undoes the 'Group' in the parser.
+        tokens = tokens[0]
+        super().__init__(tokens)
+
+    def __getattr__(self, name):
+        return getattr(self._vars[self.varname], name)
+
+    @property
+    def varname(self):
+        return self._varname
+
+    @property
+    def value(self):
+        return self._vars[self.varname].value
+
+    @value.setter
+    def value(self, new_value):
+        self._vars[self.varname] = new_value
+
+    async def eval(self):
+        return await self._vars[self.varname].eval()

@@ -1,5 +1,5 @@
 from pyparsing import OneOrMore, Or, Suppress, ParseException
-from .vocab import WHEN
+from .keywords import WHEN
 from .conditionals import IfThenElse, Then, Case
 from .triggers import Trigger
 from .ottobase import OttoBase

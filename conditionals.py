@@ -1,6 +1,6 @@
 from pyparsing import Or, OneOrMore, opAssoc, infixNotation, Forward, Optional
 from .ottobase import OttoBase
-from .vocab import IF, AND, OR, NOT, THEN, ELSE, CASE, END
+from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END
 from .expressions import Comparison, Assignment
 from .commands import Command
 
@@ -26,7 +26,7 @@ class Then(Conditional):
             await self._commands.eval()
         else:
             for command in self._commands:
-                await self.interpreter.log_info(f"{command}")
+                # await self.interpreter.log_info(f"{command}")
                 await command.eval()
 
 
