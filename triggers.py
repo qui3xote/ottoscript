@@ -3,8 +3,9 @@ from pyparsing import (CaselessKeyword,
                        Optional,
                        )
 from .ottobase import OttoBase
-from .vocab import Entity, FROM, TO, FOR, Vocab, TimeStamp
-from .expressions import RelativeTime, List
+from .keywords import FROM, TO, FOR
+from .datatypes import Entity, Numeric, List, StringValue
+from .time import RelativeTime, TimeStamp
 
 
 class Trigger(OttoBase):
@@ -15,11 +16,11 @@ class Trigger(OttoBase):
 
 
 class StateChange(Trigger):
-    term = Or(Vocab.child_parsers())
+    _term = (Entity.parser() | Numeric.parser() | StringValue.parser())
     _parser = List.parser([Entity])("_entities") \
         + CaselessKeyword("CHANGES") \
-        + Optional(FROM + term("_old")) \
-        + Optional(TO + term("_new")) \
+        + Optional(FROM + _term("_old")) \
+        + Optional(TO + _term("_new")) \
         + Optional(FOR + (TimeStamp.parser() | RelativeTime.parser())("_hold"))
 
     def __str__(self):
@@ -28,7 +29,6 @@ class StateChange(Trigger):
             triggers.append(f"{self._entity.name} == '{self._new.value}'")
         if hasattr(self, "_old"):
             triggers.append(f"{self._entity.name}.old == '{self._old.value}'")
-
         if len(triggers) == 0:
             triggers = [f"{self._entity.name}"]
 

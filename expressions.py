@@ -1,49 +1,20 @@
 import operator as op
 from pyparsing import (one_of,
                        Literal,
-                       delimited_list,
-                       Forward,
-                       Group,
-                       Optional,
-                       Or,
-                       dict_of,
-                       Suppress,
-                       Word,
-                       alphas,
-                       alphanums
+                       Group
                        )
-
 from .ottobase import OttoBase
-from .vocab import (WITH,
-                    StringValue,
-                    Numeric,
-                    Var,
-                    Entity,
-                    Hour,
-                    Minute,
-                    Second
-                    )
+from .keywords import WITH
+from .datatypes import (StringValue,
+                        Numeric,
+                        Var,
+                        Entity,
+                        Dict
+                        )
 
 
 class Expression(OttoBase):
-
-    def __str__(self):
-        return f"{' '.join(self.tokens)}"
-
-
-class RelativeTime(Expression):
-    _parser = Numeric.parser()("_count") \
-              + (Hour.parser()
-                 | Minute.parser()
-                 | Second.parser())("_unit")
-
-    @property
-    def as_seconds(self):
-        return self._count.value * self._unit.as_seconds
-
-    @property
-    def value(self):
-        return self.as_seconds
+    pass
 
 
 class Comparison(Expression):
@@ -94,7 +65,6 @@ class Comparison(Expression):
 class Assignment(Expression):
     _terms = (StringValue.parser()
               | Numeric.parser()
-              | Var.parser()
               | Entity.parser())
     _parser = Var.parser()("_left") \
         + Literal('=') \
@@ -105,50 +75,6 @@ class Assignment(Expression):
 
     async def eval(self):
         self._left.value = self._right
-
-
-class List(Expression):
-    _allowed_contents = Forward()
-    _content = delimited_list(_allowed_contents)
-    _parser = Optional("(") + _content("_contents") + Optional(")")
-
-    @property
-    def contents(self):
-        if type(self._contents) != list:
-            return [self._contents]
-        else:
-            return self._contents
-
-    @classmethod
-    def parser(cls, allowed_classes=None):
-        if allowed_classes is None:
-            allowed_classes = [StringValue,
-                               Numeric,
-                               Entity,
-                               Var
-                               ]
-        allowed = [x.parser() for x in allowed_classes]
-        cls._allowed_contents <<= Or(allowed)
-        return super().parser()
-
-
-class Dict(Expression):
-    _allowed_values = Or([StringValue.parser(),
-                          Numeric.parser(),
-                          Entity.parser(),
-                          Var.parser()
-                          ])
-    _attr_label = Word(alphas + '_', alphanums + '_')
-    _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
-    _dict = dict_of(_attr_label, _attr_value)
-    _parser = Optional(Literal("(")) + _dict("_value") + Optional(Literal(")"))
-
-    def __str__(self):
-        return str(self._value)
-
-    @property
-    def value(self):
-        return {key: value.value for key, value in self._value.items()}
 
 
 class With(Expression):
