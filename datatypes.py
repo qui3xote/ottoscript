@@ -25,7 +25,7 @@ class DataType(OttoBase):
     def parser(cls):
         cls._parser.set_name(cls.__name__)
         cls._parser.set_parse_action(cls)
-        return Or(cls._parser, Var.parser())
+        return Or([cls._parser, Var.parser()])
 
 
 class StringValue(DataType):
