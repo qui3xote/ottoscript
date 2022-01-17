@@ -23,7 +23,7 @@ class DataType(OttoBase):
 
     @classmethod
     def parser(cls):
-        cls._parser.set_name(cls.__name__)
+        #cls._parser.set_name(cls.__name__)
         cls._parser.set_parse_action(cls)
         return Or([cls._parser, Var.parser()])
 
@@ -91,15 +91,14 @@ class List(DataType):
             return self._contents
 
     @classmethod
-    def parser(cls, allowed_classes=None):
-        if allowed_classes is None:
-            allowed_classes = [StringValue,
-                               Numeric,
-                               Entity,
-                               Var
-                               ]
-        allowed = [x.parser() for x in allowed_classes]
-        cls._allowed_contents <<= Or(allowed)
+    def parser(cls, allowed_contents=None):
+        if allowed_contents is None:
+            allowed_contents = Or([StringValue.parser(),
+                                  Numeric.parser(),
+                                  Entity.parser(),
+                                  Var.parser()
+                                   ])
+        cls._allowed_contents <<= allowed_contents
         return super().parser()
 
 

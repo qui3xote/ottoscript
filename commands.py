@@ -31,7 +31,7 @@ class Pass(Command):
 
 class Set(Command):
     _kwd = CaselessKeyword("SET")
-    _parser = _kwd + List.parser([Entity])("_entities") \
+    _parser = _kwd + List.parser(Entity.parser())("_entities") \
         + (TO | "=") \
         + Or(Numeric.parser() | StringValue.parser())("_newvalue")
 
@@ -57,7 +57,7 @@ class Turn(Command):
     _kwd = CaselessKeyword("TURN")
     _parser = _kwd + (CaselessKeyword("ON") |
                       CaselessKeyword("OFF"))('_newstate') \
-                   + List.parser([Entity])("_entities") \
+                   + List.parser(Entity.parser())("_entities") \
                    + Optional(With.parser())("_with")
 
     @property
@@ -134,7 +134,7 @@ class Dim(Command):
 class Lock(Command):
     _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK"))
     _parser = _kwd("_type") + \
-        List.parser([Entity])("_entities") + Optional(With.parser())("_with")
+        List.parser(Entity.parser())("_entities") + Optional(With.parser())("_with")
 
     async def eval(self):
         service_name = self._type.lower()
@@ -156,7 +156,7 @@ class Call(Command):
     _kwd = CaselessKeyword("CALL")
     _parser = _kwd \
         + Entity.parser()("_service") \
-        + Optional(ON + List.parser([Entity]))("_entities") \
+        + Optional(ON + List.parser(Entity.parser()))("_entities") \
         + Optional(With.parser())("_with")
 
     async def eval(self):

@@ -17,7 +17,7 @@ class Trigger(OttoBase):
 
 class StateChange(Trigger):
     _term = (Entity.parser() | Numeric.parser() | StringValue.parser())
-    _parser = List.parser([Entity])("_entities") \
+    _parser = List.parser(Entity.parser())("_entities") \
         + CaselessKeyword("CHANGES") \
         + Optional(FROM + _term("_old")) \
         + Optional(TO + _term("_new")) \
