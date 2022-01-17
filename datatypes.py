@@ -23,7 +23,7 @@ class DataType(OttoBase):
 
     @classmethod
     def parser(cls):
-        #cls._parser.set_name(cls.__name__)
+        cls._parser.set_name(cls.__name__)
         cls._parser.set_parse_action(cls)
         return Or([cls._parser, Var.parser()])
 
@@ -92,14 +92,18 @@ class List(DataType):
 
     @classmethod
     def parser(cls, allowed_contents=None):
+        print(f"{allowed_contents}")
         if allowed_contents is None:
-            allowed_contents = Or([StringValue.parser(),
-                                  Numeric.parser(),
-                                  Entity.parser(),
-                                  Var.parser()
-                                   ])
-        cls._allowed_contents <<= allowed_contents
-        return super().parser()
+            allowed_contents = [StringValue.parser(),
+                                Numeric.parser(),
+                                Entity.parser(),
+                                Var.parser()
+                                ]
+        content = delimited_list(Or(allowed_contents))
+        parser = Optional("(") + content("_contents") + Optional(")")
+        parser.set_parse_action(cls)
+
+        return Or([parser.set_name(cls.__name__), Var.parser()])
 
 
 class Dict(DataType):

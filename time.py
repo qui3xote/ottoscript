@@ -13,14 +13,14 @@ SUNDAY = Or(map(CaselessKeyword, "SUNDAY SU".split()))
 
 
 class DayOfWeek(OttoBase):
-    _days = Or([MONDAY.set_parse_action(lambda x: 1),
+    _days = [MONDAY.set_parse_action(lambda x: 1),
                 TUESDAY.set_parse_action(lambda x: 2),
                 WEDNESDAY.set_parse_action(lambda x: 3),
                 THURSDAY.set_parse_action(lambda x: 4),
                 FRIDAY.set_parse_action(lambda x: 5),
                 SATURDAY.set_parse_action(lambda x: 6),
                 SUNDAY.set_parse_action(lambda x: 7)
-                ])
+                ]
     _parser = Group(List.parser(_days))("_value")
 
     @property
