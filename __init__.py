@@ -17,7 +17,7 @@ class OttoScript:
         OttoBase.set_vars(globals)
         self.parsed = False
         self.interpreter = interpreter
-        self.script = script
+        self.script = self._parser.parse_string(script)
 
     @property
     def parser(self):
