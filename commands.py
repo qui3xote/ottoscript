@@ -158,7 +158,7 @@ class Lock(Command):
 class Call(Command):
     _parser = CALL \
         + Entity.parser()("_service") \
-        + Optional(ON + List.parser(Entity.parser()))("_entities") \
+        + Optional(ON + List.parser(Entity.parser())("_entities")) \
         + Optional(With.parser())("_with")
 
     async def eval(self):
