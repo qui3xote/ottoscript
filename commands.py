@@ -80,8 +80,8 @@ class Turn(Command):
 
         for e in self._entities.contents:
             kwargs.update({'entity_id': e.name})
-            await callfunc(self.service_name,
-                           e.domain,
+            await callfunc(e.domain,
+                           self.service_name,
                            kwargs)
 
 
@@ -95,8 +95,8 @@ class Toggle(Command):
     async def eval(self):
         callfunc = self.interpreter.call_service
         for e in self._entities.contents:
-            await callfunc(self.service_name,
-                           e.domain,
+            await callfunc(e.domain,
+                           self.service_name,
                            {'entity_id': self._entity.name})
 
 
@@ -173,8 +173,8 @@ class Call(Command):
         if hasattr(self, "_entities"):
             for e in self._entities.contents:
                 kwargs.update({'entity_id': e.name})
-                await callfunc(service_name,
-                               domain,
+                await callfunc(domain,
+                               service_name,
                                kwargs)
         else:
             await callfunc(domain, service_name, kwargs)
