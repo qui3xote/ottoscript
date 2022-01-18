@@ -18,8 +18,13 @@ END = CaselessKeyword('END')
 CASE = CaselessKeyword('CASE')
 TO = CaselessKeyword('TO')
 ON = CaselessKeyword('ON')
+OFF = CaselessKeyword('OFF')
 
 # Time
 HOUR = Or(map(CaselessKeyword, ["HOUR", "HOURS"]))
 MINUTE = Or(map(CaselessKeyword, ["MINUTE", "MINUTES", "MIN"]))
 SECOND = Or(map(CaselessKeyword, ["SECOND", "SECONDS", "SEC"]))
+SUNRISE = CaselessKeyword('SUNRISE')
+SUNSET = CaselessKeyword('SUNSET')
+BEFORE = CaselessKeyword('BEFORE')
+AFTER = CaselessKeyword('AFTER')

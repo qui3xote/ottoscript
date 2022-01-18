@@ -83,6 +83,9 @@ class List(DataType):
     _content = delimited_list(_allowed_contents)
     _parser = Optional("(") + _content("_contents") + Optional(")")
 
+    # def __str__(self):
+    #     ",".join([str(x) for x in self.contents])
+
     @property
     def contents(self):
         if type(self._contents) != list:
@@ -92,7 +95,6 @@ class List(DataType):
 
     @classmethod
     def parser(cls, allowed_contents=None):
-        print(f"{allowed_contents}")
         if allowed_contents is None:
             allowed_contents = [StringValue.parser(),
                                 Numeric.parser(),
