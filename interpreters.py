@@ -36,7 +36,8 @@ class ExampleInterpreter:
         times = trigger.times
         offset = trigger.offset_seconds
 
-        triggers = [f"once({x[0]} {x[1]} + {offset}s)" for x in product(days, times)]
+        prod = product(days, times)
+        triggers = [f"once({x[0]} {x[1]} + {offset}s)" for x in prod]
         for t in triggers:
             await self.log_info(f"time: {t} {clauses}")
 
