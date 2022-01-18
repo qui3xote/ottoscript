@@ -17,7 +17,7 @@ class OttoScript:
         OttoBase.set_vars(globals)
         self.parsed = False
         self.interpreter = interpreter
-        self.script = script
+        self.script = self._parser.parse_string(script)
 
     @property
     def parser(self):
@@ -25,18 +25,27 @@ class OttoScript:
 
     async def parse(self):
         try:
-            self.script = self.parser.parse_string(self.script)
+            self.script = self._parser.parse_string(self.script)
             self.parsed = True
         except ParseException as error:
             await self.interpreter.log_error(error)
-            raise(ParseException)
+            self.interpreter.log_error(ParseException)
 
     @property
     def triggers(self):
-        triggers = []
+        return self.script.triggers.as_list()
+
+    @property
+    def clauses(self):
+        return self.script.clauses.as_list()
+
+    async def register(self):
+        funcs = []
         for trigger in self.script.triggers.as_list():
-            triggers.extend(trigger.value)
-        return triggers
+            func = await self.interpreter.register(trigger, self.clauses)
+            funcs.append(func)
+
+        return funcs
 
     async def eval(self):
         if not self.parsed:

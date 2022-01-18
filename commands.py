@@ -1,9 +1,18 @@
 from pyparsing import CaselessKeyword, Optional, Or
 from .ottobase import OttoBase
 from .datatypes import Numeric, Entity, StringValue, List
-from .keywords import ON, TO
+from .keywords import ON, TO, OFF
 from .time import RelativeTime, TimeStamp
 from .expressions import With
+
+PASS = CaselessKeyword("PASS")
+SET = CaselessKeyword("SET")
+WAIT = CaselessKeyword("WAIT")
+TURN = CaselessKeyword("TURN")
+TOGGLE = CaselessKeyword("TOGGLE")
+LOCK = CaselessKeyword("LOCK")
+UNLOCK = CaselessKeyword("UNLOCK")
+CALL = CaselessKeyword("CALL")
 
 
 class Command(OttoBase):
@@ -22,16 +31,14 @@ class Command(OttoBase):
 
 
 class Pass(Command):
-    _kwd = CaselessKeyword("PASS")
-    _parser = _kwd
+    _parser = PASS
 
     async def eval(self):
         await self.interpreter.log_info("Passing")
 
 
 class Set(Command):
-    _kwd = CaselessKeyword("SET")
-    _parser = _kwd + List.parser([Entity])("_entities") \
+    _parser = SET + List.parser(Entity.parser())("_entities") \
         + (TO | "=") \
         + Or(Numeric.parser() | StringValue.parser())("_newvalue")
 
@@ -42,8 +49,7 @@ class Set(Command):
 
 
 class Wait(Command):
-    _kwd = CaselessKeyword("WAIT")
-    _parser = _kwd + (TimeStamp.parser() | RelativeTime.parser())("_time")
+    _parser = WAIT + (TimeStamp.parser() | RelativeTime.parser())("_time")
 
     def __str__(self):
         return f"task.sleep({self._time.as_seconds})"
@@ -54,18 +60,16 @@ class Wait(Command):
 
 
 class Turn(Command):
-    _kwd = CaselessKeyword("TURN")
-    _parser = _kwd + (CaselessKeyword("ON") |
-                      CaselessKeyword("OFF"))('_newstate') \
-                   + List.parser([Entity])("_entities") \
+    _parser = TURN + (ON | OFF)('_newstate') \
+                   + List.parser(Entity.parser())("_entities") \
                    + Optional(With.parser())("_with")
 
     @property
     def service_name(self):
         return 'turn_'+self._newstate.lower()
 
-    def kwargs(self, entity):
-        return {'entity_id': entity.name}
+    # def kwargs(self, entity):
+    #     return {'entity_id': entity.name}
 
     async def eval(self):
         callfunc = self.interpreter.call_service
@@ -76,14 +80,13 @@ class Turn(Command):
 
         for e in self._entities.contents:
             kwargs.update({'entity_id': e.name})
-            await callfunc(self.service_name,
-                           e.domain,
+            await callfunc(e.domain,
+                           self.service_name,
                            kwargs)
 
 
 class Toggle(Command):
-    _kwd = CaselessKeyword("TOGGLE")
-    _parser = _kwd + Entity.parser()("_entity")
+    _parser = TOGGLE + Entity.parser()("_entity")
 
     @property
     def service_name(self):
@@ -92,8 +95,8 @@ class Toggle(Command):
     async def eval(self):
         callfunc = self.interpreter.call_service
         for e in self._entities.contents:
-            await callfunc(self.service_name,
-                           e.domain,
+            await callfunc(e.domain,
+                           self.service_name,
                            {'entity_id': self._entity.name})
 
 
@@ -132,9 +135,9 @@ class Dim(Command):
 
 
 class Lock(Command):
-    _kwd = (CaselessKeyword("LOCK") | CaselessKeyword("UNLOCK"))
-    _parser = _kwd("_type") + \
-        List.parser([Entity])("_entities") + Optional(With.parser())("_with")
+    _parser = (LOCK | UNLOCK)("_type") + \
+        List.parser(Entity.parser())("_entities") \
+        + Optional(With.parser())("_with")
 
     async def eval(self):
         service_name = self._type.lower()
@@ -153,10 +156,9 @@ class Lock(Command):
 
 
 class Call(Command):
-    _kwd = CaselessKeyword("CALL")
-    _parser = _kwd \
+    _parser = CALL \
         + Entity.parser()("_service") \
-        + Optional(ON + List.parser([Entity]))("_entities") \
+        + Optional(ON + List.parser(Entity.parser())("_entities")) \
         + Optional(With.parser())("_with")
 
     async def eval(self):
@@ -171,8 +173,8 @@ class Call(Command):
         if hasattr(self, "_entities"):
             for e in self._entities.contents:
                 kwargs.update({'entity_id': e.name})
-                await callfunc(service_name,
-                               domain,
+                await callfunc(domain,
+                               service_name,
                                kwargs)
         else:
             await callfunc(domain, service_name, kwargs)

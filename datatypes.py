@@ -83,6 +83,9 @@ class List(DataType):
     _content = delimited_list(_allowed_contents)
     _parser = Optional("(") + _content("_contents") + Optional(")")
 
+    # def __str__(self):
+    #     ",".join([str(x) for x in self.contents])
+
     @property
     def contents(self):
         if type(self._contents) != list:
@@ -91,16 +94,18 @@ class List(DataType):
             return self._contents
 
     @classmethod
-    def parser(cls, allowed_classes=None):
-        if allowed_classes is None:
-            allowed_classes = [StringValue,
-                               Numeric,
-                               Entity,
-                               Var
-                               ]
-        allowed = [x.parser() for x in allowed_classes]
-        cls._allowed_contents <<= Or(allowed)
-        return super().parser()
+    def parser(cls, allowed_contents=None):
+        if allowed_contents is None:
+            allowed_contents = [StringValue.parser(),
+                                Numeric.parser(),
+                                Entity.parser(),
+                                Var.parser()
+                                ]
+        content = delimited_list(Or(allowed_contents))
+        parser = Optional("(") + content("_contents") + Optional(")")
+        parser.set_parse_action(cls)
+
+        return Or([parser.set_name(cls.__name__), Var.parser()])
 
 
 class Dict(DataType):
