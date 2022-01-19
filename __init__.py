@@ -26,7 +26,7 @@ class OttoScript:
 
         if self.script._controls != '':
             print(f"{self.script._controls}")
-            self.interpreter.set_controls(self.script._controls)
+            await self.interpreter.set_controls(self.script._controls)
 
     @property
     def parser(self):
