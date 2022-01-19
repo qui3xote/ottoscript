@@ -50,8 +50,8 @@ class Entity(DataType):
         attribute = f":{self.attribute}" if self.attribute is not None else ''
         return f"{self.domain}.{self.id}{attribute}"
 
-    async def eval(self):
-        self._value = await self.interpreter.get_state(self.name)
+    async def eval(self, interpreter):
+        self._value = await interpreter.get_state(self.name)
         return self._value
 
     @property

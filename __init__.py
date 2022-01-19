@@ -2,7 +2,7 @@ from pyparsing import OneOrMore, Or, Suppress, Optional, ParseException
 from .keywords import WHEN
 from .conditionals import IfThenElse, Then, Case
 from .triggers import Trigger
-from .ottobase import OttoBase
+# from .ottobase import OttoBase
 from .controls import AutoDefinition
 
 
@@ -14,10 +14,10 @@ class OttoScript:
         + OneOrMore(when_expr)("triggers") \
         + OneOrMore(conditionals | Then.parser())("clauses")
 
-    def __init__(self, interpreter, script, globals={}):
-        OttoBase.set_interpreter(interpreter)
-        OttoBase.set_vars(globals)
-        self.interpreter = interpreter
+    def __init__(self, script):
+        # OttoBase.set_interpreter(interpreter)
+        # OttoBase.set_vars(globals)
+        # interpreter = interpreter
 
         try:
             self.script = self._parser.parse_string(script)

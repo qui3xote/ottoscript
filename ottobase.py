@@ -6,7 +6,6 @@ from pyparsing import (CaselessKeyword,
 
 class OttoBase:
     _parser = None
-    _interpreter = None
     _vars = dict()
 
     def __init__(self, tokens):
@@ -37,7 +36,7 @@ class OttoBase:
                 dictionary[k] = v.debugtree(levels=levels-1)
         return dictionary
 
-    async def eval(self):
+    async def eval(self, interpreter):
         return self.value
 
     @property
@@ -99,5 +98,5 @@ class Var(OttoBase):
     def value(self, new_value):
         self._vars[self.varname] = new_value
 
-    async def eval(self):
-        return await self._vars[self.varname].eval()
+    async def eval(self, interpreter):
+        return await self._vars[self.varname].eval(interpreter)
