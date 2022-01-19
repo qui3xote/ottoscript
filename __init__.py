@@ -35,7 +35,7 @@ class OttoScript:
     @property
     def controls(self):
         if self.script._controls != '':
-            return self.script._controls
+            return self.script._controls[0]
         else:
             return None
 
