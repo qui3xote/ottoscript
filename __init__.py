@@ -24,10 +24,6 @@ class OttoScript:
         except ParseException as error:
             raise(error)
 
-        if self.script._controls != '':
-            print(f"{self.script._controls}")
-            await self.interpreter.set_controls(self.script._controls)
-
     @property
     def parser(self):
         return self._parser
@@ -35,6 +31,13 @@ class OttoScript:
     @property
     def triggers(self):
         return self.script.triggers.as_list()
+
+    @property
+    def controls(self):
+        if self.script._controls != '':
+            return self.script._controls
+        else:
+            return None
 
     @property
     def clauses(self):
