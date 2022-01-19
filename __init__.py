@@ -24,7 +24,7 @@ class OttoScript:
         except ParseException as error:
             raise(error)
 
-        if type(self.script._controls) == 'AutoDefinition':
+        if self.script._controls != '':
             print(f"{self.script._controls}")
             self.interpreter.set_controls(self.script._controls)
 
