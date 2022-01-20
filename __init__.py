@@ -1,5 +1,11 @@
 from copy import deepcopy
-from pyparsing import OneOrMore, Or, Suppress, Optional, ParseException, ZeroOrMore
+from pyparsing import (OneOrMore,
+                       Or,
+                       Suppress,
+                       Optional,
+                       ParseException,
+                       ZeroOrMore,
+                       Group)
 from .keywords import WHEN
 from .conditionals import IfThenElse, Then, Case
 from .triggers import Trigger
@@ -21,51 +27,66 @@ class Actions(OttoBase):
 
     async def eval(self, interpreter):
         for clause in self.clauses:
-            clause.eval(interpreter)
+            await clause.eval(interpreter)
 
 
-class Global(OttoBase):
-    _parser = ZeroOrMore(Assignment.parser())("_assignments")
+class GlobalVarHandler(OttoBase):
+    _parser = Group(ZeroOrMore(Assignment.parser())("_assignments"))
+    _stashed_vars = None
+
+    def __init__(self, tokens):
+        tokens = tokens[0]
+        super().__init__(tokens)
 
     @property
     def assignments(self):
-        if type(self._assignments) != list:
+        if not hasattr(self, "_assignments"):
+            return []
+        elif type(self._assignments) != list:
             return [self._assignments]
         else:
-            return self._assignmentsrs
+            return self._assignments
 
     async def eval(self, interpreter):
         for assignment in self.assignments:
-            assignment.eval(interpreter)
+            await assignment.eval(interpreter)
+
+        self.stash(self._vars)
+
+    @classmethod
+    def stash(cls, vars):
+        cls._stashed_vars = deepcopy(vars)
+
+    @classmethod
+    def fetch(cls):
+        return cls._stashed_vars
 
 
 class OttoScript:
-    _globals = Global.parser()
+    _globals = GlobalVarHandler.parser()
     _trigger = Or(Trigger.child_parsers())
     _when_expr = Suppress(WHEN) + _trigger
     _parser = _globals("globals") \
         + Optional(AutoDefinition.parser())("_controls") \
         + OneOrMore(_when_expr)("triggers") \
-        + Actions.parser()('actions')
+        + Group(Actions.parser())('actions')
 
     def __init__(self, script, passed_globals={}):
-        Global.clear_vars()
+        GlobalVarHandler.clear_vars()
+        GlobalVarHandler.update_vars(passed_globals)
 
         try:
             self.script = self._parser.parse_string(script)
         except ParseException as error:
             raise(error)
 
-        self.script.globals.update_vars(passed_globals)
-        self.script.globals.eval()
-
     @property
     def parser(self):
         return self._parser
 
     @property
-    def globals(self):
-        return deepcopy(self._script._vars)
+    def global_vars(self):
+        return GlobalVarHandler.fetch()
 
     @property
     def triggers(self):
@@ -81,3 +102,6 @@ class OttoScript:
     @property
     def actions(self):
         return self.script.actions[0]
+
+    async def update_globals(self, interpreter):
+        await self.script.globals.eval(interpreter)

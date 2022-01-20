@@ -9,22 +9,21 @@ class ExampleInterpreter:
         self.trigger_funcs = {'state': self.state_trigger,
                               'time': self.time_trigger,
                               }
-        self.set_controls()
+
+        self.name = None
+        self.restart = False
+        self.trigger_var = '@trigger'
 
     def set_controls(self, controller=None):
-        if controller is None:
-            self.name = self.log_id
-            self.trigger_var = '@trigger'
-            self.single = True
-        else:
+        if controller is not None:
             self.name = controller.name
-            self.single = controller.single
+            self.restart = controller.restart
             self.trigger_var = controller.trigger_var
 
-    async def register(self, trigger, clauses):
-        await self.trigger_funcs[trigger.type](trigger, clauses)
+    async def register(self, trigger):
+        await self.trigger_funcs[trigger.type](trigger)
 
-    async def state_trigger(self, trigger, clauses):
+    async def state_trigger(self, trigger):
         trigger_strings = []
 
         for name in trigger.entities:
@@ -39,9 +38,9 @@ class ExampleInterpreter:
                 string.append(f"{name}")
 
             trigger_strings.append(" and ".join(string))
-            await self.log_info(f"state: {self.name}: {string} {clauses}")
+            await self.log_info(f"state: {self.name}: {string} {self.actions}")
 
-    async def time_trigger(self, trigger, clauses):
+    async def time_trigger(self, trigger):
         days = trigger.days
         times = trigger.times
         offset = trigger.offset_seconds
@@ -49,7 +48,7 @@ class ExampleInterpreter:
         prod = product(days, times)
         triggers = [f"once({x[0]} {x[1]} + {offset}s)" for x in prod]
         for t in triggers:
-            await self.log_info(f"time: {self.name} {t} {clauses}")
+            await self.log_info(f"time: {self.name} {t} {self.actions}")
 
     async def set_state(self,
                         entity_name,

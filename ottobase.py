@@ -79,7 +79,7 @@ class OttoBase:
 
     @classmethod
     def clear_vars(cls):
-        cls._vars = dict()
+        cls._vars.clear()
 
     @classmethod
     def set_vars(cls, vars: dict):
@@ -117,7 +117,7 @@ class Var(OttoBase):
 
     @value.setter
     def value(self, new_value):
-        self._vars[self.varname] = new_value
+        self.update_vars({self.varname: new_value})
 
     async def eval(self, interpreter):
         return await self._vars[self.varname].eval(interpreter)
