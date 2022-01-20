@@ -5,8 +5,32 @@ from pyparsing import (CaselessKeyword,
 
 
 class OttoBase:
+    """
+    A class to hold an ottoscript parser.
+
+    Class Attributes
+    ________________
+    _parser : PyparseObject
+        a pyparsing expression which defines the grammar of the class
+    _vars : dict
+        instantiated dictionary which is shared among all classes
+
+    Class Methods
+    ________________
+    parser():
+        returns _parser with name and parse_action set to match the class.
+
+    update_vars(vars):
+        update the shared variable dictionary
+
+    clear_vars():
+        clear the shared variable dictionary.
+
+    set_vars(vars):
+        replace the shared variable dictionary.
+
+    """
     _parser = None
-    _interpreter = None
     _vars = dict()
 
     def __init__(self, tokens):
@@ -37,16 +61,8 @@ class OttoBase:
                 dictionary[k] = v.debugtree(levels=levels-1)
         return dictionary
 
-    async def eval(self):
+    async def eval(self, interpreter):
         return self.value
-
-    @property
-    def interpreter(self):
-        return self._interpreter
-
-    @interpreter.setter
-    def interpreter(self, interpreter):
-        self._interpreter = interpreter
 
     @property
     def value(self):
@@ -58,12 +74,16 @@ class OttoBase:
         return cls._parser.set_parse_action(cls)
 
     @classmethod
-    def set_interpreter(cls, interpreter):
-        cls._interpreter = interpreter
+    def update_vars(cls, vars: dict):
+        cls._vars.update(vars)
 
     @classmethod
-    def set_vars(cls, vars):
-        cls._vars.update(vars)
+    def clear_vars(cls):
+        cls._vars.clear()
+
+    @classmethod
+    def set_vars(cls, vars: dict):
+        cls._vars = vars
 
     @classmethod
     def from_string(cls, string):
@@ -97,7 +117,7 @@ class Var(OttoBase):
 
     @value.setter
     def value(self, new_value):
-        self._vars[self.varname] = new_value
+        self.update_vars({self.varname: new_value})
 
-    async def eval(self):
-        return await self._vars[self.varname].eval()
+    async def eval(self, interpreter):
+        return await self._vars[self.varname].eval(interpreter)

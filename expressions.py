@@ -50,15 +50,15 @@ class Comparison(Expression):
     def value(self):
         return self._opfunc(self._left.value, self._right.value)
 
-    async def eval(self):
-        left = await self._left.eval()
-        right = await self._right.eval()
+    async def eval(self, interpreter):
+        left = await self._left.eval(interpreter)
+        right = await self._right.eval(interpreter)
         result = self._opfunc(left, right)
 
         msg = f"Condition {result}: {self._opfunc.__name__}"
         msg += f"{str(self._right)}, {str(self._left)}"
         msg += f" evaluated to ({right}, {left})"
-        await self.interpreter.log_debug(msg)
+        await interpreter.log_debug(msg)
         return result
 
 
@@ -73,7 +73,7 @@ class Assignment(Expression):
     def __str__(self):
         return ' '.join([str(x) for x in self.tokens])
 
-    async def eval(self):
+    async def eval(self, interpreter):
         self._left.value = self._right
 
 

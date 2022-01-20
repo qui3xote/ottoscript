@@ -1,55 +1,107 @@
-from pyparsing import OneOrMore, Or, Suppress, ParseException
+from copy import deepcopy
+from pyparsing import (OneOrMore,
+                       Or,
+                       Suppress,
+                       Optional,
+                       ParseException,
+                       ZeroOrMore,
+                       Group)
 from .keywords import WHEN
 from .conditionals import IfThenElse, Then, Case
 from .triggers import Trigger
 from .ottobase import OttoBase
+from .controls import AutoDefinition
+from .expressions import Assignment
+
+
+class Actions(OttoBase):
+    _conditionals = (IfThenElse.parser() | Case.parser())
+    _parser = OneOrMore(_conditionals | Then.parser())("_clauses")
+
+    @property
+    def clauses(self):
+        if type(self._clauses) != list:
+            return [self._clauses]
+        else:
+            return self._clauses
+
+    async def eval(self, interpreter):
+        for clause in self.clauses:
+            await clause.eval(interpreter)
+
+
+class GlobalVarHandler(OttoBase):
+    _parser = Group(ZeroOrMore(Assignment.parser())("_assignments"))
+    _stashed_vars = None
+
+    def __init__(self, tokens):
+        tokens = tokens[0]
+        super().__init__(tokens)
+
+    @property
+    def assignments(self):
+        if not hasattr(self, "_assignments"):
+            return []
+        elif type(self._assignments) != list:
+            return [self._assignments]
+        else:
+            return self._assignments
+
+    async def eval(self, interpreter):
+        for assignment in self.assignments:
+            await assignment.eval(interpreter)
+
+        self.stash(self._vars)
+
+    @classmethod
+    def stash(cls, vars):
+        cls._stashed_vars = deepcopy(vars)
+
+    @classmethod
+    def fetch(cls):
+        return cls._stashed_vars
 
 
 class OttoScript:
-    trigger = Or(Trigger.child_parsers())
-    conditionals = (IfThenElse.parser() | Case.parser())
-    when_expr = Suppress(WHEN) + trigger
-    _parser = OneOrMore(when_expr)("triggers") + \
-        OneOrMore(conditionals | Then.parser())("clauses")
+    _globals = GlobalVarHandler.parser()
+    _trigger = Or(Trigger.child_parsers())
+    _when_expr = Suppress(WHEN) + _trigger
+    _parser = _globals("globals") \
+        + Optional(AutoDefinition.parser())("_controls") \
+        + OneOrMore(_when_expr)("triggers") \
+        + Group(Actions.parser())('actions')
 
-    def __init__(self, interpreter, script, globals={}):
-        OttoBase.set_interpreter(interpreter)
-        OttoBase.set_vars(globals)
-        self.parsed = False
-        self.interpreter = interpreter
-        self.script = self._parser.parse_string(script)
+    def __init__(self, script, passed_globals={}):
+        GlobalVarHandler.clear_vars()
+        GlobalVarHandler.update_vars(passed_globals)
+
+        try:
+            self.script = self._parser.parse_string(script)
+        except ParseException as error:
+            raise(error)
 
     @property
     def parser(self):
         return self._parser
 
-    async def parse(self):
-        try:
-            self.script = self._parser.parse_string(self.script)
-            self.parsed = True
-        except ParseException as error:
-            await self.interpreter.log_error(error)
-            self.interpreter.log_error(ParseException)
+    @property
+    def global_vars(self):
+        return GlobalVarHandler.fetch()
 
     @property
     def triggers(self):
         return self.script.triggers.as_list()
 
     @property
-    def clauses(self):
-        return self.script.clauses.as_list()
+    def controls(self):
+        if self.script._controls != '':
+            return self.script._controls[0]
+        else:
+            return None
 
-    async def register(self):
-        funcs = []
-        for trigger in self.script.triggers.as_list():
-            func = await self.interpreter.register(trigger, self.clauses)
-            funcs.append(func)
+    @property
+    def actions(self):
+        return self.script.actions[0]
 
-        return funcs
-
-    async def eval(self):
-        if not self.parsed:
-            await self.parse()
-        await self.interpreter.log_info("Executing")
-        for clause in self.script.clauses.as_list():
-            await clause.eval()
+    async def update_globals(self, interpreter):
+        await self.script.globals.eval(interpreter)

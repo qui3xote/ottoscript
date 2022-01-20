@@ -21,11 +21,11 @@ class Command(OttoBase):
     def __str__(self):
         return " ".join([str(x) for x in self.tokens.as_list()])
 
-    async def eval(self):
-        await self.interpreter.log_info("Command")
+    async def eval(self, interpreter):
+        await interpreter.log_info("Command")
 
     async def call_service(self, domain, kwargs):
-        return await self.interpreter.call_service(domain,
+        return await interpreter.call_service(domain,
                                                    self.service_name,
                                                    kwargs)
 
@@ -33,8 +33,8 @@ class Command(OttoBase):
 class Pass(Command):
     _parser = PASS
 
-    async def eval(self):
-        await self.interpreter.log_info("Passing")
+    async def eval(self, interpreter):
+        await interpreter.log_info("Passing")
 
 
 class Set(Command):
@@ -42,8 +42,8 @@ class Set(Command):
         + (TO | "=") \
         + Or(Numeric.parser() | StringValue.parser())("_newvalue")
 
-    async def eval(self):
-        callfunc = self.interpreter.set_state
+    async def eval(self, interpreter):
+        callfunc = interpreter.set_state
         for e in self._entities.contents:
             await callfunc(e.name, value=self._newvalue.value)
 
@@ -54,8 +54,8 @@ class Wait(Command):
     def __str__(self):
         return f"task.sleep({self._time.as_seconds})"
 
-    async def eval(self):
-        result = await self.interpreter.sleep(self._time.as_seconds)
+    async def eval(self, interpreter):
+        result = await interpreter.sleep(self._time.as_seconds)
         return result
 
 
@@ -71,8 +71,8 @@ class Turn(Command):
     # def kwargs(self, entity):
     #     return {'entity_id': entity.name}
 
-    async def eval(self):
-        callfunc = self.interpreter.call_service
+    async def eval(self, interpreter):
+        callfunc = interpreter.call_service
         kwargs = {}
 
         if hasattr(self, "_with"):
@@ -92,8 +92,8 @@ class Toggle(Command):
     def service_name(self):
         return 'toggle'
 
-    async def eval(self):
-        callfunc = self.interpreter.call_service
+    async def eval(self, interpreter):
+        callfunc = interpreter.call_service
         for e in self._entities.contents:
             await callfunc(e.domain,
                            self.service_name,
@@ -121,13 +121,13 @@ class Dim(Command):
         kwargs[param] = self._number.value
         return kwargs
 
-    async def eval(self):
+    async def eval(self, interpreter):
         if self._number.value > 0 or hasattr(self, '_use_pct'):
             service_name = "turn_on"
         else:
             service_name = "turn_off"
 
-        callfunc = self.interpreter.call_service
+        callfunc = interpreter.call_service
         for e in self._entities.contents:
             await callfunc(service_name,
                            e.domain,
@@ -139,7 +139,7 @@ class Lock(Command):
         List.parser(Entity.parser())("_entities") \
         + Optional(With.parser())("_with")
 
-    async def eval(self):
+    async def eval(self, interpreter):
         service_name = self._type.lower()
 
         if hasattr(self, "_with"):
@@ -147,7 +147,7 @@ class Lock(Command):
         else:
             kwargs = {}
 
-        callfunc = self.interpreter.call_service
+        callfunc = interpreter.call_service
         for e in self._entities.contents:
             kwargs.update({'entity_id': e.name})
             await callfunc(service_name,
@@ -161,11 +161,11 @@ class Call(Command):
         + Optional(ON + List.parser(Entity.parser())("_entities")) \
         + Optional(With.parser())("_with")
 
-    async def eval(self):
+    async def eval(self, interpreter):
         domain = self._service.domain.lower()
         service_name = self._service.id.lower()
         kwargs = {}
-        callfunc = self.interpreter.call_service
+        callfunc = interpreter.call_service
 
         if hasattr(self, "_with"):
             kwargs.update(self._with.value)

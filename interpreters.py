@@ -10,28 +10,37 @@ class ExampleInterpreter:
                               'time': self.time_trigger,
                               }
 
-    async def register(self, trigger, clauses):
-        await self.trigger_funcs[trigger.type](trigger, clauses)
+        self.name = None
+        self.restart = False
+        self.trigger_var = '@trigger'
 
-    async def state_trigger(self, trigger, clauses):
+    def set_controls(self, controller=None):
+        if controller is not None:
+            self.name = controller.name
+            self.restart = controller.restart
+            self.trigger_var = controller.trigger_var
+
+    async def register(self, trigger):
+        await self.trigger_funcs[trigger.type](trigger)
+
+    async def state_trigger(self, trigger):
         trigger_strings = []
 
         for name in trigger.entities:
-            basestring = []
+            string = []
             if trigger.new is not None:
-                basestring.append(f"{name} == '{trigger.new}'")
+                string.append(f"{name} == '{trigger.new}'")
 
             if trigger.old is not None:
-                basestring.append(f"{name}.old == '{trigger.old}'")
+                string.append(f"{name}.old == '{trigger.old}'")
 
-            if len(basestring) == 0:
-                basestring.append(f"{name}")
+            if len(string) == 0:
+                string.append(f"{name}")
 
-            trigger_strings.append(" and ".join(basestring))
+            trigger_strings.append(" and ".join(string))
+            await self.log_info(f"state: {self.name}: {string} {self.actions}")
 
-        await self.log_info(f"state_change: {trigger_strings} {clauses}")
-
-    async def time_trigger(self, trigger, clauses):
+    async def time_trigger(self, trigger):
         days = trigger.days
         times = trigger.times
         offset = trigger.offset_seconds
@@ -39,10 +48,7 @@ class ExampleInterpreter:
         prod = product(days, times)
         triggers = [f"once({x[0]} {x[1]} + {offset}s)" for x in prod]
         for t in triggers:
-            await self.log_info(f"time: {t} {clauses}")
-
-    async def sun_event(self, trigger, clauses):
-        await self.log_info(f"sun_event {trigger} {clauses}")
+            await self.log_info(f"time: {self.name} {t} {self.actions}")
 
     async def set_state(self,
                         entity_name,

@@ -1,5 +1,9 @@
 from pyparsing import CaselessKeyword, Or
 
+# control keywords
+AUTOMATION = Or(map(CaselessKeyword, ["AUTOMATION", "AUTO"]))
+RESTART = CaselessKeyword("RESTART")
+
 # Keywords
 WHEN = CaselessKeyword('WHEN')
 IF = CaselessKeyword('IF')
