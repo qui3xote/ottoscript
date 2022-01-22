@@ -1,6 +1,6 @@
 from pyparsing import CaselessKeyword, Optional, Or, Group
 from .ottobase import OttoBase
-from .datatypes import Numeric, Entity, StringValue, List, Area
+from .datatypes import Numeric, Entity, StringValue, List, Area, ident
 from .keywords import ON, TO, OFF, AREA
 from .time import RelativeTime, TimeStamp
 from .expressions import With
@@ -45,7 +45,10 @@ class Command(OttoBase):
 
 class Target(OttoBase):
     _parser = Group(List.parser(Entity.parser())("_entities")
-                    | (AREA + List.parser(Area.parser())("_areas"))
+                    | (AREA
+                       + List.parser(Area.parser())
+                       + Optional(ident())("_area_domain")
+                       )("_areas")
                     )("_targets")
 
     def as_dict(self):
@@ -56,13 +59,13 @@ class Target(OttoBase):
 
         if '_areas' in self._targets.keys():
             for area in self._targets['_areas'][0].contents:
-                if area.domain in target_dict.keys():
+                if "area_domain" in target_dict.keys():
                     if 'area_id' in target_dict[area.domain].keys():
-                        target_dict[area.domain]['area_id'].append(area.name)
+                        target_dict[area.domain]['area_id'].extend(self.expand(area.name))
                     else:
-                        target_dict[area.domain]['area_id'] = [area.name]
+                        target_dict[area.domain]['area_id'] = self.expand(area.name)
                 else:
-                    target_dict[area.domain] = {'area_id': [area.name]}
+                    target_dict[area.domain] = {'area_id': self.expand(area.name)}
 
         if '_entities' in self._targets.keys():
             for entity in self._targets['_entities'][0].contents:
@@ -75,6 +78,13 @@ class Target(OttoBase):
                     target_dict[entity.domain] = {'entity_id': [entity.name]}
 
         return target_dict
+
+    def expand(self, area_name):
+        if area_name in self._vars['area_domains'].keys():
+            return self._vars['area_domains'][area_name]
+        else:
+            return [area_name]
+
 
 
 class Pass(Command):
