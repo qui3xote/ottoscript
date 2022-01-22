@@ -1,7 +1,7 @@
-from pyparsing import CaselessKeyword, Optional, Or
+from pyparsing import CaselessKeyword, Optional, Or, Group
 from .ottobase import OttoBase
-from .datatypes import Numeric, Entity, StringValue, List
-from .keywords import ON, TO, OFF
+from .datatypes import Numeric, Entity, StringValue, List, Area
+from .keywords import ON, TO, OFF, AREA
 from .time import RelativeTime, TimeStamp
 from .expressions import With
 
@@ -13,6 +13,7 @@ TOGGLE = CaselessKeyword("TOGGLE")
 LOCK = CaselessKeyword("LOCK")
 UNLOCK = CaselessKeyword("UNLOCK")
 CALL = CaselessKeyword("CALL")
+DIM = CaselessKeyword("DIM")
 
 
 class Command(OttoBase):
@@ -21,13 +22,56 @@ class Command(OttoBase):
     def __str__(self):
         return " ".join([str(x) for x in self.tokens.as_list()])
 
-    async def eval(self, interpreter):
-        await interpreter.log_info("Command")
+    @property
+    def with_data(self):
+        return {}
 
-    async def call_service(self, domain, kwargs):
-        return await interpreter.call_service(domain,
-                                                   self.service_name,
-                                                   kwargs)
+    async def eval(self, interpreter):
+        kwargs = self.with_data
+
+        if hasattr(self, "_targets"):
+            targets = self._targets.as_dict()
+
+            for domain in targets.keys():
+                kwargs.update(targets[domain])
+
+                if hasattr(self, 'domain'):
+                    domain = self.domain
+
+                await interpreter.call_service(domain, self.service_name, kwargs)
+        else:
+            await interpreter.call_service(self.domain, self.service_name, kwargs)
+
+
+class Target(OttoBase):
+    _parser = Group(List.parser(Entity.parser())("_entities")
+                    | (AREA + List.parser(Area.parser())("_areas"))
+                    )("_targets")
+
+    def as_dict(self):
+        target_dict = {}
+
+        if '_areas' in self._targets.keys():
+            for area in self._targets['_areas'][0].contents:
+                if area.domain in target_dict.keys():
+                    if 'area_id' in target_dict[area.domain].keys():
+                        target_dict[area.domain]['area_id'].append(area.name)
+                    else:
+                        target_dict[area.domain]['area_id'] = [area.name]
+                else:
+                    target_dict[area.domain] = {'area_id': [area.name]}
+
+        if '_entities' in self._targets.keys():
+            for entity in self._targets['_entities'][0].contents:
+                if entity.domain in target_dict.keys():
+                    if 'entity_id' in target_dict[entity.domain].keys():
+                        target_dict[entity.domain]['entity_id'].append(entity.name)
+                    else:
+                        target_dict[entity.domain]['entity_id'] = [entity.name]
+                else:
+                    target_dict[entity.domain] = {'entity_id': [entity.name]}
+
+        return target_dict
 
 
 class Pass(Command):
@@ -38,7 +82,8 @@ class Pass(Command):
 
 
 class Set(Command):
-    _parser = SET + List.parser(Entity.parser())("_entities") \
+    _parser = SET \
+        + List.parser(Entity.parser())("_entities") \
         + (TO | "=") \
         + Or(Numeric.parser() | StringValue.parser())("_newvalue")
 
@@ -61,55 +106,38 @@ class Wait(Command):
 
 class Turn(Command):
     _parser = TURN + (ON | OFF)('_newstate') \
-                   + List.parser(Entity.parser())("_entities") \
+                   + Target.parser()("_targets") \
                    + Optional(With.parser())("_with")
 
     @property
     def service_name(self):
         return 'turn_'+self._newstate.lower()
 
-    # def kwargs(self, entity):
-    #     return {'entity_id': entity.name}
-
-    async def eval(self, interpreter):
-        callfunc = interpreter.call_service
-        kwargs = {}
-
+    @property
+    def with_data(self):
         if hasattr(self, "_with"):
-            kwargs.update(self._with.value)
-
-        for e in self._entities.contents:
-            kwargs.update({'entity_id': e.name})
-            await callfunc(e.domain,
-                           self.service_name,
-                           kwargs)
+            return self._with.value
+        else:
+            return {}
 
 
 class Toggle(Command):
-    _parser = TOGGLE + Entity.parser()("_entity")
+    _parser = TOGGLE + Target.parser()("_targets")
 
     @property
     def service_name(self):
         return 'toggle'
 
-    async def eval(self, interpreter):
-        callfunc = interpreter.call_service
-        for e in self._entities.contents:
-            await callfunc(e.domain,
-                           self.service_name,
-                           {'entity_id': self._entity.name})
-
 
 class Dim(Command):
-    _kwd = CaselessKeyword("DIM")
-    _parser = _kwd + Entity.parser()("_entities") + \
+    _kwd = DIM
+    _parser = _kwd + Target.parser()("_targets") + \
         (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
         + Numeric.parser()("_number") \
         + Optional('%')("_use_pct")
 
-    def kwargs(self, entity):
-        kwargs = {'entity_id': entity.name}
-
+    @property
+    def with_data(self):
         if self._type.upper() == 'TO':
             param = 'brightness'
         else:
@@ -118,20 +146,18 @@ class Dim(Command):
         if hasattr(self, '_use_pct'):
             param += '_pct'
 
-        kwargs[param] = self._number.value
-        return kwargs
+        return {param: self._number.value}
 
-    async def eval(self, interpreter):
+    @property
+    def service_name(self):
         if self._number.value > 0 or hasattr(self, '_use_pct'):
-            service_name = "turn_on"
+            return "turn_on"
         else:
-            service_name = "turn_off"
+            return "turn_off"
 
-        callfunc = interpreter.call_service
-        for e in self._entities.contents:
-            await callfunc(service_name,
-                           e.domain,
-                           self.kwargs(e))
+    @property
+    def domain(self):
+        return "light"
 
 
 class Lock(Command):
@@ -139,42 +165,32 @@ class Lock(Command):
         List.parser(Entity.parser())("_entities") \
         + Optional(With.parser())("_with")
 
-    async def eval(self, interpreter):
-        service_name = self._type.lower()
+    @property
+    def service_name(self):
+        return self._type.lower()
 
-        if hasattr(self, "_with"):
-            kwargs = self._with.value
-        else:
-            kwargs = {}
-
-        callfunc = interpreter.call_service
-        for e in self._entities.contents:
-            kwargs.update({'entity_id': e.name})
-            await callfunc(service_name,
-                           e.domain,
-                           kwargs)
+    @property
+    def domain(self):
+        return "light"
 
 
 class Call(Command):
     _parser = CALL \
         + Entity.parser()("_service") \
-        + Optional(ON + List.parser(Entity.parser())("_entities")) \
+        + Optional(ON + Target.parser()("_targets")) \
         + Optional(With.parser())("_with")
 
-    async def eval(self, interpreter):
-        domain = self._service.domain.lower()
-        service_name = self._service.id.lower()
-        kwargs = {}
-        callfunc = interpreter.call_service
-
+    @property
+    def with_data(self):
         if hasattr(self, "_with"):
-            kwargs.update(self._with.value)
-
-        if hasattr(self, "_entities"):
-            for e in self._entities.contents:
-                kwargs.update({'entity_id': e.name})
-                await callfunc(domain,
-                               service_name,
-                               kwargs)
+            return self._with.value
         else:
-            await callfunc(domain, service_name, kwargs)
+            return {}
+
+    @property
+    def domain(self):
+        return self._service.domain
+
+    @property
+    def service_name(self):
+        return self._service.name
