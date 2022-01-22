@@ -80,10 +80,14 @@ class Target(OttoBase):
         return target_dict
 
     def expand(self, area_name):
+        areas = []
         if area_name in self._vars['area_domains'].keys():
-            return self._vars['area_domains'][area_name]
+            for area in self._vars['area_domains'][area_name]:
+                areas.extend(self.expand(area))
         else:
-            return [area_name]
+            areas = [area_name]
+
+        return areas
 
 
 
