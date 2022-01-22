@@ -4,12 +4,15 @@ from pyparsing import (one_of,
                        Group
                        )
 from .ottobase import OttoBase
-from .keywords import WITH
+from .keywords import WITH, AREA
 from .datatypes import (StringValue,
                         Numeric,
                         Var,
                         Entity,
-                        Dict
+                        Dict,
+                        ident,
+                        List,
+                        Area
                         )
 
 

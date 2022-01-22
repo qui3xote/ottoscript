@@ -32,3 +32,6 @@ SUNRISE = CaselessKeyword('SUNRISE')
 SUNSET = CaselessKeyword('SUNSET')
 BEFORE = CaselessKeyword('BEFORE')
 AFTER = CaselessKeyword('AFTER')
+
+#Other
+AREA = Or(map(CaselessKeyword, ["AREAS", "AREA"]))

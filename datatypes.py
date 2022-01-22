@@ -28,6 +28,9 @@ class DataType(OttoBase):
         return Or([cls._parser, Var.parser()])
 
 
+ident = Word(alphas + '_', alphanums + '_')("_name")
+
+
 class StringValue(DataType):
     _parser = QuotedString(quote_char="'", unquoteResults=True)("_value") \
                 | QuotedString(quote_char='"', unquoteResults=True)("_value")
@@ -41,9 +44,9 @@ class Numeric(DataType):
 
 
 class Entity(DataType):
-    _parser = common.identifier("_domain") \
+    _parser = ident("_domain") \
         + Literal(".") \
-        + common.identifier("_id") \
+        + ident("_id") \
         + Optional(":" + common.identifier("_attribute"))
 
     def __str__(self):
@@ -76,6 +79,30 @@ class Entity(DataType):
         else:
             val = f"{self.domain}.{self._id}"
         return val
+
+
+class Area(DataType):
+    _parser = ident("_id") \
+        + Optional(Literal(".") + ident("_domain"))
+
+    async def eval(self, interpreter):
+        self._value = await interpreter.get_state(self.name)
+        return self._value
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def domain(self):
+        if not hasattr(self, '_domain'):
+            return ''
+        else:
+            return self._domain
+
+    @property
+    def name(self):
+        return self.id
 
 
 class List(DataType):
