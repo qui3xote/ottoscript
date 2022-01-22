@@ -1,4 +1,4 @@
-from pyparsing import CaselessKeyword, Optional, Or, Group
+from pyparsing import CaselessKeyword, Optional, Or, Group, MatchFirst
 from .ottobase import OttoBase
 from .datatypes import Numeric, Entity, StringValue, List, Area, ident
 from .keywords import ON, TO, OFF, AREA
@@ -14,6 +14,10 @@ LOCK = CaselessKeyword("LOCK")
 UNLOCK = CaselessKeyword("UNLOCK")
 CALL = CaselessKeyword("CALL")
 DIM = CaselessKeyword("DIM")
+ARM = CaselessKeyword("ARM")
+DISARM = CaselessKeyword("DISARM")
+CLOSE = CaselessKeyword("CLOSE")
+OPEN = CaselessKeyword("OPEN")
 
 
 class Command(OttoBase):
@@ -24,7 +28,10 @@ class Command(OttoBase):
 
     @property
     def with_data(self):
-        return {}
+        if hasattr(self,"_with"):
+            return self._with._value
+        else:
+            return {}
 
     async def eval(self, interpreter):
         kwargs = self.with_data
@@ -178,8 +185,8 @@ class Dim(Command):
 
 
 class Lock(Command):
-    _parser = (LOCK | UNLOCK)("_type") + \
-        List.parser(Entity.parser())("_entities") \
+    _parser = (LOCK | UNLOCK)("_type") \
+        + Target.parser()("_targets") \
         + Optional(With.parser())("_with")
 
     @property
@@ -191,18 +198,67 @@ class Lock(Command):
         return "light"
 
 
+class Arm(Command):
+    _states = map(CaselessKeyword, "HOME AWAY NIGHT VACATION".split(" "))
+    _parser = ARM \
+        + MatchFirst(_states)("_type") \
+        + Target.parser()("_targets") \
+        + Optional(With.parser())("_with")
+
+    @property
+    def service_name(self):
+        return f"alarm_arm_{self._type.lower()}"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class Disarm(Command):
+    _parser = DISARM \
+        + Target.parser()("_targets") \
+        + Optional(With.parser())("_with")
+
+    @property
+    def service_name(self):
+        return "alarm_disarm"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class OpenClose(Command):
+    _parser = (OPEN | CLOSE)("_type") \
+        + Target.parser()("_targets") \
+        + Optional(TO + Numeric.parser()("_position"))
+
+    @property
+    def with_data(self):
+        if hasattr(self, "_position"):
+            position = self._position._value
+        else:
+            position = 100
+
+        if self._type == 'Open':
+            position = 100 - position
+
+        return {'position': position}
+
+    @property
+    def service_name(self):
+        return "set_cover_position"
+
+    @property
+    def domain(self):
+        return "cover"
+
+
 class Call(Command):
     _parser = CALL \
         + Entity.parser()("_service") \
         + Optional(ON + Target.parser()("_targets")) \
         + Optional(With.parser())("_with")
-
-    @property
-    def with_data(self):
-        if hasattr(self, "_with"):
-            return self._with.value
-        else:
-            return {}
 
     @property
     def domain(self):
