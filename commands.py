@@ -49,6 +49,9 @@ class Target(OttoBase):
                     )("_targets")
 
     def as_dict(self):
+        # Outputs {domain1: 'area_id': [area_id1, area_id2],
+        #                   'entity_id': [entity_id1, entity_id2]
+        #          domain2: 'area_id': [area_id1, area_id2] ...}
         target_dict = {}
 
         if '_areas' in self._targets.keys():
@@ -193,4 +196,4 @@ class Call(Command):
 
     @property
     def service_name(self):
-        return self._service.name
+        return self._service.id
