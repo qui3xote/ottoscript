@@ -12,8 +12,11 @@ from pyparsing import (
     alphanums,
     common
 )
-
+from .keywords import reserved_words
 from .ottobase import OttoBase, Var
+
+
+ident = ~reserved_words + common.identifier
 
 
 class DataType(OttoBase):
@@ -26,9 +29,6 @@ class DataType(OttoBase):
         cls._parser.set_name(cls.__name__)
         cls._parser.set_parse_action(cls)
         return Or([cls._parser, Var.parser()])
-
-
-ident = common.identifier
 
 
 class StringValue(DataType):

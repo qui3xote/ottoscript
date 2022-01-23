@@ -24,6 +24,8 @@ TO = CaselessKeyword('TO')
 ON = CaselessKeyword('ON')
 OFF = CaselessKeyword('OFF')
 
+reserved_words = WHEN | IF | THEN | ELSE | CASE | END
+
 # Time
 HOUR = Or(map(CaselessKeyword, ["HOUR", "HOURS"]))
 MINUTE = Or(map(CaselessKeyword, ["MINUTE", "MINUTES", "MIN"]))

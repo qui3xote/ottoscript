@@ -32,7 +32,6 @@ class Comparison(Expression):
 
     _term = (StringValue.parser()
              | Numeric.parser()
-             | Var.parser()
              | Entity.parser())
 
     _parser = _term("_left") \

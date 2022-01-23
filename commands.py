@@ -61,6 +61,13 @@ class Target(OttoBase):
                        + Optional(ident())("_area_domain")
                        ))("_targets")
 
+    @property
+    def area_domain(self):
+        if not hasattr(self, '_area_domain'):
+            return ''
+
+        return self._area_domain
+
     def as_dict(self):
         # Outputs {domain1: 'area_id': [area_id1, area_id2],
         #                   'entity_id': [entity_id1, entity_id2]
@@ -69,11 +76,11 @@ class Target(OttoBase):
 
         # TODO This is hideous and needs to be cleaned up.
         if hasattr(self, "_areas"):
-            if self._area_domain not in target_dict.keys():
-                target_dict[self._area_domain] = {'area_id': []}
+            if self.area_domain not in target_dict.keys():
+                target_dict[self.area_domain] = {'area_id': []}
 
             for area in self._areas.contents:
-                target_dict[self._area_domain]['area_id'].extend(self.expand(area.name))
+                target_dict[self.area_domain]['area_id'].extend(self.expand(area.name))
 
         if hasattr(self, "_entities"):
             for entity in self._entities.contents:
