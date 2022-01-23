@@ -105,7 +105,7 @@ class OttoBase:
 
 class Var(OttoBase):
     _parser = Group(Word("@", alphanums+'_')("_varname")) \
-              + Optional(":" + ident("_attribute"))
+              + Optional(":" + common.identifier("_attribute"))
 
     def __init__(self, tokens):
         # This is an annoying hack to force
