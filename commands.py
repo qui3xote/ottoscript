@@ -28,7 +28,7 @@ class Command(OttoBase):
 
     @property
     def with_data(self):
-        if hasattr(self,"_with"):
+        if hasattr(self, "_with"):
             return self._with._value
         else:
             return {}
@@ -45,9 +45,13 @@ class Command(OttoBase):
                 if hasattr(self, 'domain'):
                     domain = self.domain
 
-                await interpreter.call_service(domain, self.service_name, kwargs)
+                await interpreter.call_service(domain,
+                                               self.service_name,
+                                               kwargs)
         else:
-            await interpreter.call_service(self.domain, self.service_name, kwargs)
+            await interpreter.call_service(self.domain,
+                                           self.service_name,
+                                           kwargs)
 
 
 class Target(OttoBase):
@@ -64,6 +68,7 @@ class Target(OttoBase):
         #          domain2: 'area_id': [area_id1, area_id2] ...}
         target_dict = {}
 
+        # TODO This is hideous and needs to be cleaned up.
         if '_areas' in self._targets.keys():
             for area in self._targets['_areas'][0].contents:
                 if "area_domain" in target_dict.keys():
@@ -95,7 +100,6 @@ class Target(OttoBase):
             areas = [area_name]
 
         return areas
-
 
 
 class Pass(Command):

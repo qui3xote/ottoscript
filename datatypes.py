@@ -9,9 +9,9 @@ from pyparsing import (
     Optional,
     dict_of,
     alphas,
-    alphanums
+    alphanums,
+    common
 )
-from pyparsing import common
 
 from .ottobase import OttoBase, Var
 
@@ -28,7 +28,7 @@ class DataType(OttoBase):
         return Or([cls._parser, Var.parser()])
 
 
-ident = Word(alphas + '_', alphanums + '_')("_name")
+ident = common.identifier
 
 
 class StringValue(DataType):
@@ -79,6 +79,10 @@ class Entity(DataType):
         else:
             val = f"{self.domain}.{self._id}"
         return val
+
+    async def eval_attribute(self, interpreter, attr_name):
+        name = ".".join([self.domain, self.name, attr_name])
+        return await interpreter.get_state(name)
 
 
 class Area(DataType):
@@ -143,11 +147,22 @@ class Dict(DataType):
     _attr_label = Word(alphas + '_', alphanums + '_')
     _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
     _dict = dict_of(_attr_label, _attr_value)
-    _parser = Optional(Literal("(")) + _dict("_value") + Optional(Literal(")"))
+    _parser = Literal("(") + _dict("_value") + Literal(")") \
+              + Optional(":" + ident("_attribute"))
 
     def __str__(self):
         return str(self._value)
 
-    @property
-    def value(self):
-        return {key: value.value for key, value in self._value.items()}
+    async def eval(self, interpreter):
+        if hasattr(self, "_attribute"):
+            return await self.eval_attribute(self,
+                                             interpreter,
+                                             self._attribute)
+
+        return {key: value.eval() for key, value in self._value.items()}
+
+    async def eval_attribute(self, interpreter, attr_name):
+        if attr_name in self._value.keys():
+            return await self._value.get(attr_name).eval(interpreter)
+        else:
+            return None
