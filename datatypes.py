@@ -116,6 +116,9 @@ class List(DataType):
 
     # def __str__(self):
     #     ",".join([str(x) for x in self.contents])
+    @property
+    def value(self):
+        return self.contents
 
     @property
     def contents(self):

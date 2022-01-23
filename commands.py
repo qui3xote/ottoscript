@@ -55,12 +55,11 @@ class Command(OttoBase):
 
 
 class Target(OttoBase):
-    _parser = Group(List.parser(Entity.parser())("_entities")
+    _parser = (List.parser(Entity.parser())("_entities")
                     | (AREA
-                       + List.parser(Area.parser())
+                       + List.parser(Area.parser())("_areas")
                        + Optional(ident())("_area_domain")
-                       )("_areas")
-                    )("_targets")
+                       ))("_targets")
 
     def as_dict(self):
         # Outputs {domain1: 'area_id': [area_id1, area_id2],
@@ -69,18 +68,15 @@ class Target(OttoBase):
         target_dict = {}
 
         # TODO This is hideous and needs to be cleaned up.
-        if '_areas' in self._targets.keys():
-            for area in self._targets['_areas'][0].contents:
-                if "area_domain" in target_dict.keys():
-                    if 'area_id' in target_dict[area.domain].keys():
-                        target_dict[area.domain]['area_id'].extend(self.expand(area.name))
-                    else:
-                        target_dict[area.domain]['area_id'] = self.expand(area.name)
-                else:
-                    target_dict[area.domain] = {'area_id': self.expand(area.name)}
+        if hasattr(self, "_areas"):
+            if self._area_domain not in target_dict.keys():
+                target_dict[self._area_domain] = {'area_id': []}
 
-        if '_entities' in self._targets.keys():
-            for entity in self._targets['_entities'][0].contents:
+            for area in self._areas.contents:
+                target_dict[self._area_domain]['area_id'].extend(self.expand(area.name))
+
+        if hasattr(self, "_entities"):
+            for entity in self._entities.contents:
                 if entity.domain in target_dict.keys():
                     if 'entity_id' in target_dict[entity.domain].keys():
                         target_dict[entity.domain]['entity_id'].append(entity.name)
@@ -93,8 +89,9 @@ class Target(OttoBase):
 
     def expand(self, area_name):
         areas = []
-        if area_name in self._vars['area_domains'].keys():
-            for area in self._vars['area_domains'][area_name]:
+
+        if area_name in self._vars['area_shortcuts'].keys():
+            for area in self._vars['area_shortcuts'][area_name]:
                 areas.extend(self.expand(area))
         else:
             areas = [area_name]

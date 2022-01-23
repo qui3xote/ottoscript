@@ -92,15 +92,16 @@ class OttoBase:
         cls._vars = vars
 
     @classmethod
+    def get_var(cls, var):
+        return cls._vars[var]
+
+    @classmethod
     def from_string(cls, string):
         return cls.parser().parse_string(string)
 
     @classmethod
     def child_parsers(cls):
         return [subclass.parser() for subclass in cls.__subclasses__()]
-
-
-
 
 
 class Var(OttoBase):
@@ -131,7 +132,11 @@ class Var(OttoBase):
 
     @property
     def pointer(self):
-        return self._vars[self.varname]
+        try:
+            return self._vars[self.varname]
+        except KeyError as error:
+            # TODO better error message
+            raise error
 
     async def eval(self, interpreter):
         if hasattr(self, "_attribute"):

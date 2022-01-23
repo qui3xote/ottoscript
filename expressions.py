@@ -1,7 +1,8 @@
 import operator as op
 from pyparsing import (one_of,
                        Literal,
-                       Group
+                       Group,
+                       Or
                        )
 from .ottobase import OttoBase
 from .keywords import WITH
@@ -9,7 +10,8 @@ from .datatypes import (StringValue,
                         Numeric,
                         Var,
                         Entity,
-                        Dict
+                        Dict,
+                        DataType
                         )
 
 
@@ -63,9 +65,7 @@ class Comparison(Expression):
 
 
 class Assignment(Expression):
-    _terms = (StringValue.parser()
-              | Numeric.parser()
-              | Entity.parser())
+    _terms = Or(DataType.child_parsers())
     _parser = Var.parser()("_left") \
         + Literal('=') \
         + _terms("_right")
