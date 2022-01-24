@@ -148,7 +148,8 @@ class Dict(DataType):
     _attr_label = Word(alphas + '_', alphanums + '_')
     _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
     _dict = dict_of(_attr_label, _attr_value)
-    _parser = Literal("(") + _dict("_value") + Literal(")") \
+    _parser = Literal("(") \
+              + _dict("_value") + Literal(")") \
               + Optional(":" + ident("_attribute"))
 
     def __str__(self):

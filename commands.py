@@ -83,22 +83,6 @@ class Target(OttoBase):
             self.entities = None
             self.areas = values
 
-
-    # @property
-    # def areas(self):
-    #     if '_areas' in self._targets.keys():
-    #         return self._targets['_areas'][0]
-    #     else:
-    #         return None
-    #
-    # @property
-    # def entities(self):
-    #     if '_entities' in self._targets.keys():
-    #         print(type(self._targets['_entities'][0]))
-    #         return self._targets['_entities'][0]
-    #     else:
-    #         return None
-
     def as_dict(self):
         # Outputs {domain1: 'area_id': [area_id1, area_id2],
         #                   'entity_id': [entity_id1, entity_id2]
@@ -112,12 +96,11 @@ class Target(OttoBase):
                 target_dict['areas']['area_id'].extend(self.expand(area.name))
 
         if self.entities is not None:
-            #print(type(self.entities), type(self.entities.contents))
-            #print(self.entities.debugtree(1))
             for entity in self.entities:
                 if entity.domain in target_dict.keys():
                     if 'entity_id' in target_dict[entity.domain].keys():
-                        target_dict[entity.domain]['entity_id'].append(entity.name)
+                        name = entity.name
+                        target_dict[entity.domain]['entity_id'].append(name)
                     else:
                         target_dict[entity.domain]['entity_id'] = [entity.name]
                 else:

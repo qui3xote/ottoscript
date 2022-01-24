@@ -2,7 +2,6 @@ import operator as op
 from pyparsing import (one_of,
                        Literal,
                        Group,
-                       Or,
                        MatchFirst
                        )
 from .ottobase import OttoBase
@@ -65,7 +64,6 @@ class Comparison(Expression):
 
 
 class Assignment(Expression):
-    #_terms =
     _parser = Var.parser()("_left") \
         + Literal('=') \
         + MatchFirst(DataType.child_parsers())("_right")
@@ -81,7 +79,6 @@ class Assignment(Expression):
             return self._right
 
     async def eval(self, interpreter):
-        await interpreter.log_debug(f"Assign: {self._left.varname} to {self.right} {type(self.right)}")
         self.update_vars({self._left.varname: self.right})
 
 
