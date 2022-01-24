@@ -114,8 +114,6 @@ class List(DataType):
     _content = delimited_list(_allowed_contents)
     _parser = Literal("(") + _content("_contents") + Literal(")")
 
-    # def __str__(self):
-    #     ",".join([str(x) for x in self.contents])
     @property
     def value(self):
         return self.contents

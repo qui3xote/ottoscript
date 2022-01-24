@@ -133,7 +133,7 @@ class Var(OttoBase):
     @property
     def pointer(self):
         try:
-            return self._vars[self.varname]
+            return self.get_var(self.varname)
         except KeyError as error:
             # TODO better error message
             raise error

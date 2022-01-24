@@ -21,12 +21,12 @@ class Then(Conditional):
                     | Conditional.forward)("_commands")
 
     async def eval(self, interpreter):
-        await interpreter.log_info(f"{self._commands}")
+        await interpreter.log_debug(f"THEN {self._commands}")
         if type(self._commands) != list:
             await self._commands.eval(interpreter)
         else:
             for command in self._commands:
-                # await interpreter.log_info(f"{command}")
+                await interpreter.log_debug(f"THEN {command}")
                 await command.eval(interpreter)
 
 

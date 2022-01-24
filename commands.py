@@ -1,5 +1,5 @@
-from pyparsing import CaselessKeyword, Optional, Or, MatchFirst
-from .ottobase import OttoBase
+from pyparsing import CaselessKeyword, Optional, Or, MatchFirst, Group
+from .ottobase import OttoBase, Var
 from .datatypes import Numeric, Entity, StringValue, List, Area, ident
 from .keywords import ON, TO, OFF, AREA
 from .time import RelativeTime, TimeStamp
@@ -34,12 +34,14 @@ class Command(OttoBase):
             return {}
 
     async def eval(self, interpreter):
+        await interpreter.log_debug(f"COMMAND: {self}")
         kwargs = self.with_data
 
         if hasattr(self, "_targets"):
             targets = self._targets.as_dict()
-
+            await interpreter.log_debug(f"TARGETS: {targets}")
             for domain in targets.keys():
+                await interpreter.log_debug(f"TARGET DOMAIN: {domain}")
                 kwargs.update(targets[domain])
 
                 if hasattr(self, 'domain'):
@@ -49,41 +51,70 @@ class Command(OttoBase):
                                                self.service_name,
                                                kwargs)
         else:
+            await interpreter.log_debug(f"COMMAND DOMAIN: {self.domain}")
             await interpreter.call_service(self.domain,
                                            self.service_name,
                                            kwargs)
 
 
 class Target(OttoBase):
-    _parser = (List.parser(Entity.parser())("_entities")
-                    | (AREA
-                       + List.parser(Area.parser())("_areas")
-                       + Optional(ident())("_area_domain")
-                       ))("_targets")
+    _parser = Group(Var.parser()("_var")
+                    ^ List.parser(Entity.parser())("_values")
+                    ^ (AREA + List.parser(Area.parser())("_values"))
+                    )("_targets")
 
-    @property
-    def area_domain(self):
-        if not hasattr(self, '_area_domain'):
-            return ''
+    def __init__(self, tokens):
+        super().__init__(tokens)
 
-        return self._area_domain
+        if "_var" in self._targets.keys():
+            var = self.get_var(self._targets['_var'].varname)
+            if type(var) == List:
+                values = var.contents
+            else:
+                values = [var]
+        else:
+            values = self._targets["_values"][0].contents
+
+        if type(values[0]) == Entity:
+            self.entities = values
+            self.areas = None
+
+        if type(values[0]) == Area:
+            self.entities = None
+            self.areas = values
+
+
+    # @property
+    # def areas(self):
+    #     if '_areas' in self._targets.keys():
+    #         return self._targets['_areas'][0]
+    #     else:
+    #         return None
+    #
+    # @property
+    # def entities(self):
+    #     if '_entities' in self._targets.keys():
+    #         print(type(self._targets['_entities'][0]))
+    #         return self._targets['_entities'][0]
+    #     else:
+    #         return None
 
     def as_dict(self):
         # Outputs {domain1: 'area_id': [area_id1, area_id2],
         #                   'entity_id': [entity_id1, entity_id2]
         #          domain2: 'area_id': [area_id1, area_id2] ...}
         target_dict = {}
-
         # TODO This is hideous and needs to be cleaned up.
-        if hasattr(self, "_areas"):
-            if self.area_domain not in target_dict.keys():
-                target_dict[self.area_domain] = {'area_id': []}
+        if self.areas is not None:
+            target_dict['areas'] = {'area_id': []}
 
-            for area in self._areas.contents:
-                target_dict[self.area_domain]['area_id'].extend(self.expand(area.name))
+            for area in self.areas:
+                target_dict['areas']['area_id'].extend(self.expand(area.name))
 
-        if hasattr(self, "_entities"):
-            for entity in self._entities.contents:
+        if self.entities is not None:
+            #print(type(self.entities), type(self.entities.contents))
+            #print(self.entities.debugtree(1))
+            for entity in self.entities:
                 if entity.domain in target_dict.keys():
                     if 'entity_id' in target_dict[entity.domain].keys():
                         target_dict[entity.domain]['entity_id'].append(entity.name)
@@ -138,6 +169,7 @@ class Wait(Command):
 
 class Turn(Command):
     _parser = TURN + (ON | OFF)('_newstate') \
+                   + ident("_domain") \
                    + Target.parser()("_targets") \
                    + Optional(With.parser())("_with")
 
@@ -152,9 +184,15 @@ class Turn(Command):
         else:
             return {}
 
+    @property
+    def domain(self):
+        return self._domain
+
 
 class Toggle(Command):
-    _parser = TOGGLE + Target.parser()("_targets")
+    _parser = TOGGLE \
+              + ident("_domain") \
+              + Target.parser()("_targets")
 
     @property
     def service_name(self):
@@ -162,9 +200,9 @@ class Toggle(Command):
 
 
 class Dim(Command):
-    _kwd = DIM
-    _parser = _kwd + Target.parser()("_targets") + \
-        (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
+    _parser = DIM \
+        + Target.parser()("_targets") \
+        + (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
         + Numeric.parser()("_number") \
         + Optional('%')("_use_pct")
 

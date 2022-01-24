@@ -48,7 +48,6 @@ class GlobalVarHandler(OttoBase):
             return self._assignments
 
     async def eval(self, interpreter):
-        print("assigning")
         for assignment in self.assignments:
             await assignment.eval(interpreter)
 
@@ -56,7 +55,7 @@ class GlobalVarHandler(OttoBase):
 
     @classmethod
     def stash(cls, vars):
-        cls._stashed_vars = deepcopy(vars)
+        cls._stashed_vars = vars
 
     @classmethod
     def fetch(cls):
