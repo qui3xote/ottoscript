@@ -48,6 +48,7 @@ class GlobalVarHandler(OttoBase):
             return self._assignments
 
     async def eval(self, interpreter):
+        print("assigning")
         for assignment in self.assignments:
             await assignment.eval(interpreter)
 

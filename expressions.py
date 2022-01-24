@@ -2,7 +2,8 @@ import operator as op
 from pyparsing import (one_of,
                        Literal,
                        Group,
-                       Or
+                       Or,
+                       MatchFirst
                        )
 from .ottobase import OttoBase
 from .keywords import WITH
@@ -64,16 +65,24 @@ class Comparison(Expression):
 
 
 class Assignment(Expression):
-    _terms = Or(DataType.child_parsers())
+    #_terms =
     _parser = Var.parser()("_left") \
         + Literal('=') \
-        + _terms("_right")
+        + MatchFirst(DataType.child_parsers())("_right")
 
     def __str__(self):
         return ' '.join([str(x) for x in self.tokens])
 
+    @property
+    def right(self):
+        if type(self._right) == list:
+            return self._right[0]
+        else:
+            return self._right
+
     async def eval(self, interpreter):
-        self._left.value = self._right
+        await interpreter.log_debug(f"Assign: {self._left.varname} to {self.right} {type(self.right)}")
+        self.update_vars({self._left.varname: self.right})
 
 
 class With(Expression):

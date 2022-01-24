@@ -112,7 +112,7 @@ class Area(DataType):
 class List(DataType):
     _allowed_contents = Forward()
     _content = delimited_list(_allowed_contents)
-    _parser = Optional("(") + _content("_contents") + Optional(")")
+    _parser = Literal("(") + _content("_contents") + Literal(")")
 
     # def __str__(self):
     #     ",".join([str(x) for x in self.contents])

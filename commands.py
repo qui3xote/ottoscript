@@ -1,4 +1,4 @@
-from pyparsing import CaselessKeyword, Optional, Or, Group, MatchFirst
+from pyparsing import CaselessKeyword, Optional, Or, MatchFirst
 from .ottobase import OttoBase
 from .datatypes import Numeric, Entity, StringValue, List, Area, ident
 from .keywords import ON, TO, OFF, AREA

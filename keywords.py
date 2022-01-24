@@ -24,8 +24,6 @@ TO = CaselessKeyword('TO')
 ON = CaselessKeyword('ON')
 OFF = CaselessKeyword('OFF')
 
-reserved_words = WHEN | IF | THEN | ELSE | CASE | END
-
 # Time
 HOUR = Or(map(CaselessKeyword, ["HOUR", "HOURS"]))
 MINUTE = Or(map(CaselessKeyword, ["MINUTE", "MINUTES", "MIN"]))
@@ -37,3 +35,8 @@ AFTER = CaselessKeyword('AFTER')
 
 # Other
 AREA = Or(map(CaselessKeyword, ["AREAS", "AREA"]))
+
+reserved_words = (WHEN | IF | THEN | ELSE | CASE | END
+                  | FROM | IS | FOR | TRUE | CHANGES | TO | FROM | ON | OFF
+                  | HOUR | MINUTE | SECOND | SUNRISE | SUNSET | BEFORE | AFTER
+                  | AREA)
