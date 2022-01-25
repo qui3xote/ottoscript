@@ -66,6 +66,8 @@ class Target(OttoBase):
     def __init__(self, tokens):
         super().__init__(tokens)
 
+    def clean_input(self):
+        # TODO this must die
         if "_var" in self._targets.keys():
             var = self.get_var(self._targets['_var'].varname)
             if type(var) == List:
@@ -87,6 +89,7 @@ class Target(OttoBase):
         # Outputs {domain1: 'area_id': [area_id1, area_id2],
         #                   'entity_id': [entity_id1, entity_id2]
         #          domain2: 'area_id': [area_id1, area_id2] ...}
+        self.clean_input()
         target_dict = {}
         # TODO This is hideous and needs to be cleaned up.
         if self.areas is not None:
