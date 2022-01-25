@@ -129,14 +129,17 @@ class Pass(Command):
 
 class Set(Command):
     _parser = SET \
-        + List.parser(Entity.parser())("_entities") \
+        + Target.parser()("_targets") \
         + (TO | "=") \
         + Or(Numeric.parser() | StringValue.parser())("_newvalue")
 
     async def eval(self, interpreter):
         callfunc = interpreter.set_state
-        for e in self._entities.contents:
-            await callfunc(e.name, value=self._newvalue.value)
+        targets = self._targets.as_dict()
+
+        for key in targets.keys():
+            for e in targets[key]['entity_id']:
+                await callfunc(e.name, value=self._newvalue.value)
 
 
 class Wait(Command):
