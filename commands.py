@@ -134,7 +134,10 @@ class Set(Command):
     _parser = SET \
         + Target.parser()("_targets") \
         + (TO | "=") \
-        + Or(Numeric.parser() | StringValue.parser())("_newvalue")
+        + (Entity.parser()
+           ^ Numeric.parser()
+           ^ StringValue.parser()
+           )("_newvalue")
 
     async def eval(self, interpreter):
         callfunc = interpreter.set_state
@@ -142,7 +145,8 @@ class Set(Command):
 
         for key in targets.keys():
             for e in targets[key]['entity_id']:
-                await callfunc(e.name, value=self._newvalue.value)
+                new = await self._newvalue.eval(interpreter)
+                await callfunc(e, value=new)
 
 
 class Wait(Command):
