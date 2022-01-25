@@ -227,7 +227,7 @@ class Lock(Command):
 
     @property
     def domain(self):
-        return "light"
+        return "lock"
 
 
 class Arm(Command):
@@ -272,7 +272,7 @@ class OpenClose(Command):
         else:
             position = 100
 
-        if self._type == 'Open':
+        if self._type == 'Close':
             position = 100 - position
 
         return {'position': position}
