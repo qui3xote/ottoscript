@@ -77,9 +77,6 @@ class TimeTrigger(Trigger):
 
 
 class SunEvent(Trigger):
-    # _relative = Optional(RelativeTime.parser()("_time")
-    #                      + (BEFORE | AFTER)("_relative"))("_offset")
-    # _days = Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
     _parser = Optional(RelativeTime.parser()("_time")
                        + (BEFORE | AFTER)("_relative")
                        )("_offset") \
