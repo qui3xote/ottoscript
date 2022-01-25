@@ -58,7 +58,6 @@ class TimeTrigger(Trigger):
 
     @property
     def days(self):
-        print(type(self._days))
         if not hasattr(self, "_days"):
             return ['']
         else:
@@ -100,7 +99,6 @@ class SunEvent(Trigger):
         if not hasattr(self, "_days"):
             return ['']
         else:
-            print(type(self._days))
             return [x.value for x in self._days.contents]
 
     @property
