@@ -58,6 +58,7 @@ class TimeTrigger(Trigger):
 
     @property
     def days(self):
+        print(type(self._days))
         if not hasattr(self, "_days"):
             return ['']
         else:
@@ -77,10 +78,14 @@ class TimeTrigger(Trigger):
 
 
 class SunEvent(Trigger):
-    _relative = Optional(RelativeTime.parser()("_time")
-                         + (BEFORE | AFTER)("_relative"))("_offset")
-    _days = Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
-    _parser = _relative + (SUNRISE | SUNSET)("_sunevent") + _days
+    # _relative = Optional(RelativeTime.parser()("_time")
+    #                      + (BEFORE | AFTER)("_relative"))("_offset")
+    # _days = Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
+    _parser = Optional(RelativeTime.parser()("_time")
+                       + (BEFORE | AFTER)("_relative")
+                       )("_offset") \
+              + (SUNRISE | SUNSET)("_sunevent") \
+              + Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
 
     @property
     def offset_seconds(self):
@@ -95,6 +100,7 @@ class SunEvent(Trigger):
         if not hasattr(self, "_days"):
             return ['']
         else:
+            print(type(self._days))
             return [x.value for x in self._days.contents]
 
     @property
