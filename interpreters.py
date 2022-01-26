@@ -68,7 +68,7 @@ class ExampleInterpreter:
 
     async def call_service(self, domain, service_name, kwargs):
         message = f"service.call({domain}, {service_name}, **{kwargs}))"
-        await self.log_info(message)
+        await self.log_debug(message)
 
     async def sleep(self, seconds):
         await self.log_info(f"task.sleep({seconds}))")

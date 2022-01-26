@@ -1,7 +1,9 @@
 from pyparsing import (CaselessKeyword,
                        Word,
                        alphanums,
-                       Group)
+                       Group,
+                       Optional,
+                       common)
 
 
 class OttoBase:
@@ -64,6 +66,10 @@ class OttoBase:
     async def eval(self, interpreter):
         return self.value
 
+    async def eval_attribute(self, interpreter, attr_name):
+        message = f"{type(self).__name__} does not support attribute access"
+        interpreter.log_warning(message)
+
     @property
     def value(self):
         return self._value
@@ -86,6 +92,10 @@ class OttoBase:
         cls._vars = vars
 
     @classmethod
+    def get_var(cls, var):
+        return cls._vars[var]
+
+    @classmethod
     def from_string(cls, string):
         return cls.parser().parse_string(string)
 
@@ -95,7 +105,8 @@ class OttoBase:
 
 
 class Var(OttoBase):
-    _parser = Group(Word("@", alphanums+'_')("_varname"))
+    _parser = Group(Word("@", alphanums+'_')("_varname")) \
+              + Optional(":" + common.identifier("_attribute"))
 
     def __init__(self, tokens):
         # This is an annoying hack to force
@@ -105,7 +116,7 @@ class Var(OttoBase):
         super().__init__(tokens)
 
     def __getattr__(self, name):
-        return getattr(self._vars[self.varname], name)
+        return getattr(self.pointer, name)
 
     @property
     def varname(self):
@@ -113,11 +124,23 @@ class Var(OttoBase):
 
     @property
     def value(self):
-        return self._vars[self.varname].value
+        return self.pointer.value
 
     @value.setter
     def value(self, new_value):
         self.update_vars({self.varname: new_value})
 
+    @property
+    def pointer(self):
+        try:
+            return self.get_var(self.varname)
+        except KeyError as error:
+            # TODO better error message
+            raise error
+
     async def eval(self, interpreter):
+        if hasattr(self, "_attribute"):
+            return await self.pointer.eval_attribute(interpreter,
+                                                     self._attribute)
+
         return await self._vars[self.varname].eval(interpreter)

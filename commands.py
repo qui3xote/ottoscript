@@ -1,6 +1,6 @@
-from pyparsing import CaselessKeyword, Optional, Or, Group
-from .ottobase import OttoBase
-from .datatypes import Numeric, Entity, StringValue, List, Area
+from pyparsing import CaselessKeyword, Optional, Or, MatchFirst, Group
+from .ottobase import OttoBase, Var
+from .datatypes import Numeric, Entity, StringValue, List, Area, ident
 from .keywords import ON, TO, OFF, AREA
 from .time import RelativeTime, TimeStamp
 from .expressions import With
@@ -14,6 +14,10 @@ LOCK = CaselessKeyword("LOCK")
 UNLOCK = CaselessKeyword("UNLOCK")
 CALL = CaselessKeyword("CALL")
 DIM = CaselessKeyword("DIM")
+ARM = CaselessKeyword("ARM")
+DISARM = CaselessKeyword("DISARM")
+CLOSE = CaselessKeyword("CLOSE")
+OPEN = CaselessKeyword("OPEN")
 
 
 class Command(OttoBase):
@@ -24,54 +28,99 @@ class Command(OttoBase):
 
     @property
     def with_data(self):
-        return {}
+        if hasattr(self, "_with"):
+            return self._with._value
+        else:
+            return {}
 
     async def eval(self, interpreter):
+        await interpreter.log_debug(f"COMMAND: {self}")
         kwargs = self.with_data
 
         if hasattr(self, "_targets"):
             targets = self._targets.as_dict()
-
+            await interpreter.log_debug(f"TARGETS: {targets}")
             for domain in targets.keys():
+                await interpreter.log_debug(f"TARGET DOMAIN: {domain}")
                 kwargs.update(targets[domain])
 
                 if hasattr(self, 'domain'):
                     domain = self.domain
 
-                await interpreter.call_service(domain, self.service_name, kwargs)
+                await interpreter.call_service(domain,
+                                               self.service_name,
+                                               kwargs)
         else:
-            await interpreter.call_service(self.domain, self.service_name, kwargs)
+            await interpreter.log_debug(f"COMMAND DOMAIN: {self.domain}")
+            await interpreter.call_service(self.domain,
+                                           self.service_name,
+                                           kwargs)
 
 
 class Target(OttoBase):
-    _parser = Group(List.parser(Entity.parser())("_entities")
-                    | (AREA + List.parser(Area.parser())("_areas"))
+    _parser = Group(Var.parser()("_var")
+                    ^ List.parser(Entity.parser())("_values")
+                    ^ (AREA + List.parser(Area.parser())("_values"))
                     )("_targets")
 
+    def __init__(self, tokens):
+        super().__init__(tokens)
+
+    def clean_input(self):
+        # TODO this must die
+        if "_var" in self._targets.keys():
+            var = self.get_var(self._targets['_var'].varname)
+            if type(var) == List:
+                values = var.contents
+            else:
+                values = [var]
+        else:
+            values = self._targets["_values"][0].contents
+
+        if type(values[0]) == Entity:
+            self.entities = values
+            self.areas = None
+
+        if type(values[0]) == Area:
+            self.entities = None
+            self.areas = values
+
     def as_dict(self):
+        # Outputs {domain1: 'area_id': [area_id1, area_id2],
+        #                   'entity_id': [entity_id1, entity_id2]
+        #          domain2: 'area_id': [area_id1, area_id2] ...}
+        self.clean_input()
         target_dict = {}
+        # TODO This is hideous and needs to be cleaned up.
+        if self.areas is not None:
+            target_dict['areas'] = {'area_id': []}
 
-        if '_areas' in self._targets.keys():
-            for area in self._targets['_areas'][0].contents:
-                if area.domain in target_dict.keys():
-                    if 'area_id' in target_dict[area.domain].keys():
-                        target_dict[area.domain]['area_id'].append(area.name)
-                    else:
-                        target_dict[area.domain]['area_id'] = [area.name]
-                else:
-                    target_dict[area.domain] = {'area_id': [area.name]}
+            for area in self.areas:
+                target_dict['areas']['area_id'].extend(self.expand(area.name))
 
-        if '_entities' in self._targets.keys():
-            for entity in self._targets['_entities'][0].contents:
+        if self.entities is not None:
+            for entity in self.entities:
                 if entity.domain in target_dict.keys():
                     if 'entity_id' in target_dict[entity.domain].keys():
-                        target_dict[entity.domain]['entity_id'].append(entity.name)
+                        name = entity.name
+                        target_dict[entity.domain]['entity_id'].append(name)
                     else:
                         target_dict[entity.domain]['entity_id'] = [entity.name]
                 else:
                     target_dict[entity.domain] = {'entity_id': [entity.name]}
 
         return target_dict
+
+    def expand(self, area_name):
+        areas = []
+
+        if area_name in self._vars['area_shortcuts'].keys():
+            for area in self._vars['area_shortcuts'][area_name]:
+                areas.extend(self.expand(area))
+        else:
+            areas = [area_name]
+
+        return areas
 
 
 class Pass(Command):
@@ -83,14 +132,21 @@ class Pass(Command):
 
 class Set(Command):
     _parser = SET \
-        + List.parser(Entity.parser())("_entities") \
+        + Target.parser()("_targets") \
         + (TO | "=") \
-        + Or(Numeric.parser() | StringValue.parser())("_newvalue")
+        + (Entity.parser()
+           ^ Numeric.parser()
+           ^ StringValue.parser()
+           )("_newvalue")
 
     async def eval(self, interpreter):
         callfunc = interpreter.set_state
-        for e in self._entities.contents:
-            await callfunc(e.name, value=self._newvalue.value)
+        targets = self._targets.as_dict()
+
+        for key in targets.keys():
+            for e in targets[key]['entity_id']:
+                new = await self._newvalue.eval(interpreter)
+                await callfunc(e, value=new)
 
 
 class Wait(Command):
@@ -106,6 +162,7 @@ class Wait(Command):
 
 class Turn(Command):
     _parser = TURN + (ON | OFF)('_newstate') \
+                   + ident("_domain") \
                    + Target.parser()("_targets") \
                    + Optional(With.parser())("_with")
 
@@ -120,9 +177,15 @@ class Turn(Command):
         else:
             return {}
 
+    @property
+    def domain(self):
+        return self._domain
+
 
 class Toggle(Command):
-    _parser = TOGGLE + Target.parser()("_targets")
+    _parser = TOGGLE \
+              + ident("_domain") \
+              + Target.parser()("_targets")
 
     @property
     def service_name(self):
@@ -130,9 +193,9 @@ class Toggle(Command):
 
 
 class Dim(Command):
-    _kwd = DIM
-    _parser = _kwd + Target.parser()("_targets") + \
-        (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
+    _parser = DIM \
+        + Target.parser()("_targets") \
+        + (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
         + Numeric.parser()("_number") \
         + Optional('%')("_use_pct")
 
@@ -161,8 +224,8 @@ class Dim(Command):
 
 
 class Lock(Command):
-    _parser = (LOCK | UNLOCK)("_type") + \
-        List.parser(Entity.parser())("_entities") \
+    _parser = (LOCK | UNLOCK)("_type") \
+        + Target.parser()("_targets") \
         + Optional(With.parser())("_with")
 
     @property
@@ -171,7 +234,63 @@ class Lock(Command):
 
     @property
     def domain(self):
-        return "light"
+        return "lock"
+
+
+class Arm(Command):
+    _states = map(CaselessKeyword, "HOME AWAY NIGHT VACATION".split(" "))
+    _parser = ARM \
+        + MatchFirst(_states)("_type") \
+        + Target.parser()("_targets") \
+        + Optional(With.parser())("_with")
+
+    @property
+    def service_name(self):
+        return f"alarm_arm_{self._type.lower()}"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class Disarm(Command):
+    _parser = DISARM \
+        + Target.parser()("_targets") \
+        + Optional(With.parser())("_with")
+
+    @property
+    def service_name(self):
+        return "alarm_disarm"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class OpenClose(Command):
+    _parser = (OPEN | CLOSE)("_type") \
+        + Target.parser()("_targets") \
+        + Optional(TO + Numeric.parser()("_position"))
+
+    @property
+    def with_data(self):
+        if hasattr(self, "_position"):
+            position = self._position._value
+        else:
+            position = 100
+
+        if self._type.lower == 'close':
+            position = 100 - position
+
+        return {'position': position}
+
+    @property
+    def service_name(self):
+        return "set_cover_position"
+
+    @property
+    def domain(self):
+        return "cover"
 
 
 class Call(Command):
@@ -181,16 +300,9 @@ class Call(Command):
         + Optional(With.parser())("_with")
 
     @property
-    def with_data(self):
-        if hasattr(self, "_with"):
-            return self._with.value
-        else:
-            return {}
-
-    @property
     def domain(self):
         return self._service.domain
 
     @property
     def service_name(self):
-        return self._service.name
+        return self._service.id

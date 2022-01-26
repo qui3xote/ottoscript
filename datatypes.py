@@ -9,11 +9,14 @@ from pyparsing import (
     Optional,
     dict_of,
     alphas,
-    alphanums
+    alphanums,
+    common
 )
-from pyparsing import common
-
+from .keywords import reserved_words
 from .ottobase import OttoBase, Var
+
+
+ident = ~reserved_words + common.identifier
 
 
 class DataType(OttoBase):
@@ -26,9 +29,6 @@ class DataType(OttoBase):
         cls._parser.set_name(cls.__name__)
         cls._parser.set_parse_action(cls)
         return Or([cls._parser, Var.parser()])
-
-
-ident = Word(alphas + '_', alphanums + '_')("_name")
 
 
 class StringValue(DataType):
@@ -80,6 +80,10 @@ class Entity(DataType):
             val = f"{self.domain}.{self._id}"
         return val
 
+    async def eval_attribute(self, interpreter, attr_name):
+        name = ".".join([self.domain, self.name, attr_name])
+        return await interpreter.get_state(name)
+
 
 class Area(DataType):
     _parser = ident("_id") \
@@ -108,10 +112,11 @@ class Area(DataType):
 class List(DataType):
     _allowed_contents = Forward()
     _content = delimited_list(_allowed_contents)
-    _parser = Optional("(") + _content("_contents") + Optional(")")
+    _parser = Literal("(") + _content("_contents") + Literal(")")
 
-    # def __str__(self):
-    #     ",".join([str(x) for x in self.contents])
+    @property
+    def value(self):
+        return self.contents
 
     @property
     def contents(self):
@@ -143,11 +148,23 @@ class Dict(DataType):
     _attr_label = Word(alphas + '_', alphanums + '_')
     _attr_value = Suppress("=") + _allowed_values + Optional(Suppress(","))
     _dict = dict_of(_attr_label, _attr_value)
-    _parser = Optional(Literal("(")) + _dict("_value") + Optional(Literal(")"))
+    _parser = Literal("(") \
+              + _dict("_value") + Literal(")") \
+              + Optional(":" + ident("_attribute"))
 
     def __str__(self):
         return str(self._value)
 
-    @property
-    def value(self):
-        return {key: value.value for key, value in self._value.items()}
+    async def eval(self, interpreter):
+        if hasattr(self, "_attribute"):
+            return await self.eval_attribute(self,
+                                             interpreter,
+                                             self._attribute)
+
+        return {key: value.eval() for key, value in self._value.items()}
+
+    async def eval_attribute(self, interpreter, attr_name):
+        if attr_name in self._value.keys():
+            return await self._value.get(attr_name).eval(interpreter)
+        else:
+            return None

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from pyparsing import (OneOrMore,
                        Or,
                        Suppress,
@@ -55,7 +54,7 @@ class GlobalVarHandler(OttoBase):
 
     @classmethod
     def stash(cls, vars):
-        cls._stashed_vars = deepcopy(vars)
+        cls._stashed_vars = vars
 
     @classmethod
     def fetch(cls):
