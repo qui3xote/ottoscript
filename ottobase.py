@@ -3,7 +3,8 @@ from pyparsing import (CaselessKeyword,
                        alphanums,
                        Group,
                        Optional,
-                       common)
+                       common,
+                       ParseResults)
 
 
 class OttoBase:
@@ -32,10 +33,25 @@ class OttoBase:
         replace the shared variable dictionary.
 
     """
-    _parser = None
-    _vars = dict()
+    parser = None
 
-    def __init__(self, tokens):
+    def __new__(cls, *args, **kwargs):
+        if len(args) == 0:
+            print("new parser")
+            cls.parser.set_name(cls.__name__)
+            return cls.parser.set_parse_action(lambda x: cls(x))
+        elif type(args[0]) == ParseResults:
+            print("new class")
+            return super(OttoBase, cls).__new__(cls)
+        else:
+            print("new parser")
+            cls.parser.set_name(cls.__name__)
+            return cls.parser.set_parse_action(lambda x: cls(x))
+
+    def __init__(self, tokens, *args, **kwargs):
+        print('super initing')
+        super().__init__(*args, **kwargs)
+        print('initing')
         self.tokens = tokens
         self.dictionary = {}
         for k, v in self.tokens.as_dict().items():
@@ -70,77 +86,39 @@ class OttoBase:
         message = f"{type(self).__name__} does not support attribute access"
         interpreter.log_warning(message)
 
-    @property
-    def value(self):
-        return self._value
-
-    @classmethod
-    def parser(cls):
-        cls._parser.set_name(cls.__name__)
-        return cls._parser.set_parse_action(cls)
-
-    @classmethod
     def update_vars(cls, vars: dict):
         cls._vars.update(vars)
 
-    @classmethod
     def clear_vars(cls):
         cls._vars.clear()
 
-    @classmethod
     def set_vars(cls, vars: dict):
         cls._vars = vars
 
-    @classmethod
     def get_var(cls, var):
         return cls._vars[var]
 
-    @classmethod
     def from_string(cls, string):
         return cls.parser().parse_string(string)
 
-    @classmethod
     def child_parsers(cls):
         return [subclass.parser() for subclass in cls.__subclasses__()]
 
 
 class Var(OttoBase):
-    _parser = Group(Word("@", alphanums+'_')("_varname")) \
-              + Optional(":" + common.identifier("_attribute"))
+    parser = Group(Word("@", alphanums+'_')("var_name")
+                   + Optional(":" + common.identifier)("attribute"))
 
-    def __init__(self, tokens):
+    def __init__(self, tokens, *args, **kwargs):
         # This is an annoying hack to force
         # Pyparsing to preserve the namespace.
         # It undoes the 'Group' in the parser.
-        tokens = tokens[0]
-        super().__init__(tokens)
+        super().__init__(tokens[0])
 
-    def __getattr__(self, name):
-        return getattr(self.pointer, name)
 
-    @property
-    def varname(self):
-        return self._varname
-
-    @property
-    def value(self):
-        return self.pointer.value
-
-    @value.setter
-    def value(self, new_value):
-        self.update_vars({self.varname: new_value})
-
-    @property
-    def pointer(self):
-        try:
-            return self.get_var(self.varname)
-        except KeyError as error:
-            # TODO better error message
-            raise error
-
-    async def eval(self, interpreter):
-        if hasattr(self, "_attribute"):
-            return await self.pointer.eval_attribute(interpreter,
-                                                     self._attribute)
-
-        return await self._vars[self.varname].eval(interpreter)
+    # async def eval(self, interpreter):
+    #     if hasattr(self, "_attribute"):
+    #         return await self.pointer.eval_attribute(interpreter,
+    #                                                  self._attribute)
+    #
+    #     return await self._vars[self.varname].eval(interpreter)
