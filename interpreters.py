@@ -1,20 +1,29 @@
 from itertools import product
 
 
-class ExampleInterpreter:
+class VarHandler:
+    def __init__(self):
+        self.locals = {}
+        self.globals = {}
 
+    def get(self, key):
+        return self.locals.get(key)
+
+    def update(self, key, value):
+        self.locals.update({key: value})
+
+
+class ExampleInterpreter:
     def __init__(self, log_id='Test', debug_as_info=True):
         self.log_id = log_id
         self.debug_as_info = debug_as_info
         self.trigger_funcs = {'state': self.state_trigger,
                               'time': self.time_trigger,
                               }
-
-        self.name = None
-        self.restart = False
-        self.trigger_var = '@trigger'
+        self.vars = VarHandler()
 
     def set_controls(self, controller=None):
+        self.controls = controller
         if controller is not None:
             self.name = controller.name
             self.restart = controller.restart
