@@ -1,10 +1,16 @@
-from pyparsing import (CaselessKeyword,
-                       Word,
-                       alphanums,
-                       Group,
-                       Optional,
-                       common,
-                       ParseResults)
+from pyparsing import ParseResults, CaselessKeyword
+
+
+class VarHandler:
+    def __init__(self):
+        self.locals = {}
+        self.globals = {}
+
+    def get(self, key):
+        return self.locals.get(key)
+
+    def update(self, key, value):
+        self.locals.update({key: value})
 
 
 class OttoBase:

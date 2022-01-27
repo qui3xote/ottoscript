@@ -103,7 +103,7 @@ class Dict(OttoBase):
                    )
 
     async def eval(self, interpreter):
-        if hasattr(self, "_attribute"):
+        if hasattr(self, "attribute"):
             result = await self.value.get(self.attribute).eval(interpreter)
         else:
             result = {}
@@ -113,14 +113,55 @@ class Dict(OttoBase):
 
 
 class Target(OttoBase):
-    parser = Group(List(Entity() ^ Var())("entities")
-                   | (AREA + List(Area() ^ Var())("areas"))
+    parser = Group(List(Entity() ^ Var())("inputs")
+                   | (AREA + List(Area() ^ Var())("inputs"))
                    )
 
     async def eval(self, interpreter):
+        entities = []
+        areas = []
 
-        if hasattr(self, 'entities'):
-            return {'entity_id': [e.name for e in self.entities.contents]}
+        for i in self.inputs.contents:
+            if type(i) == Var:
+                i = interpreter.vars.get(i.name)
 
-        if hasattr(self, 'areas'):
-            return {'area_id': [a.name for a in self.areas.contents]}
+            if type(i) == List:
+                i = i.contents
+            else:
+                i = [i]
+            for x in i:
+                if type(x) == Entity:
+                    entities.append(x.name)
+                if type(x) == Area:
+                    areas.append(x.name)
+
+        return {'entity_id': entities, 'area_id': areas}
+
+
+class Single(OttoBase):
+    parser = Group((Var()
+                   ^ Entity()
+                   ^ Numeric()
+                   ^ String()
+                    )("inputs")
+                   )
+
+    async def eval(self, interpreter):
+        entities = []
+        areas = []
+
+        for i in self.inputs.contents:
+            if type(i) == Var:
+                i = interpreter.vars.get(i.name)
+
+            if type(i) == List:
+                i = i.contents
+            else:
+                i = [i]
+            for x in i:
+                if type(x) == Entity:
+                    entities.append(x.name)
+                if type(x) == Area:
+                    areas.append(x.name)
+
+        return {'entity_id': entities, 'area_id': areas}

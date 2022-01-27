@@ -1,18 +1,6 @@
 from itertools import product
 
 
-class VarHandler:
-    def __init__(self):
-        self.locals = {}
-        self.globals = {}
-
-    def get(self, key):
-        return self.locals.get(key)
-
-    def update(self, key, value):
-        self.locals.update({key: value})
-
-
 class ExampleInterpreter:
     def __init__(self, log_id='Test', debug_as_info=True):
         self.log_id = log_id
