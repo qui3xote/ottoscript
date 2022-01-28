@@ -110,7 +110,7 @@ class Dict(OttoBase):
 
 class Target(OttoBase):
     parser = Group(List(Entity() ^ Var())("inputs")
-                   | (AREA + List(Area() ^ Var())("inputs"))
+                   ^ (AREA + List(Area() ^ Var())("inputs"))
                    )
 
     async def eval(self, interpreter):
@@ -134,20 +134,20 @@ class Target(OttoBase):
         return {'entity_id': entities, 'area_id': areas}
 
 
-class Single(OttoBase):
-    parser = Group((Var()
-                   ^ Entity()
-                   ^ Numeric()
-                   ^ String()
-                    )("inputs")
-                   )
-
-    @classmethod
-    def pre_parse(cls, parser=None, *args, **kwargs):
-
-        if parser is None:
-            parser = (String() ^ Numeric() ^ Entity() ^ Var())
-        else:
-            parser = Var() ^ parser
-
-        return parser.set_parse_action(lambda x: cls(x, *args, **kwargs))
+# class Single(OttoBase):
+#     parser = Group((Var()
+#                    ^ Entity()
+#                    ^ Numeric()
+#                    ^ String()
+#                     )("inputs")
+#                    )
+#
+#     @classmethod
+#     def pre_parse(cls, parser=None, *args, **kwargs):
+#
+#         if parser is None:
+#             parser = (String() ^ Numeric() ^ Entity() ^ Var())
+#         else:
+#             parser = Var() ^ parser
+#
+#         return parser.set_parse_action(lambda x: cls(x, *args, **kwargs))

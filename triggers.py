@@ -3,7 +3,7 @@ from pyparsing import (CaselessKeyword,
                        )
 from .ottobase import OttoBase
 from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
-from .datatypes import Entity, Numeric, List, StringValue
+from .datatypes import Entity, Numeric, List, String
 from .time import RelativeTime, TimeStamp, DayOfWeek
 
 
@@ -15,7 +15,7 @@ class Trigger(OttoBase):
 
 
 class StateChange(Trigger):
-    _term = (Entity.parser() | Numeric.parser() | StringValue.parser())
+    _term = (Entity.parser() | Numeric.parser() | String.parser())
     _parser = List.parser(Entity.parser())("_entities") \
         + CaselessKeyword("CHANGES") \
         + Optional(FROM + _term("_old")) \

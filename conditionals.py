@@ -21,12 +21,12 @@ class Then(Conditional):
                     | Conditional.forward)("_commands")
 
     async def eval(self, interpreter):
-        await interpreter.log_debug(f"THEN {self._commands}")
+        await interpreter.log.debug(f"THEN {self._commands}")
         if type(self._commands) != list:
             await self._commands.eval(interpreter)
         else:
             for command in self._commands:
-                await interpreter.log_debug(f"THEN {command}")
+                await interpreter.log.debug(f"THEN {command}")
                 await command.eval(interpreter)
 
 
@@ -49,12 +49,12 @@ class If(Conditional):
         self._eval_tree = self.build_evaluator_tree()
 
     async def eval(self, interpreter):
-        await interpreter.log_debug('In ifclause eval')
+        await interpreter.log.debug('In ifclause eval')
         result = await self.eval_tree(self._eval_tree, interpreter)
         return result
 
     async def eval_tree(self, tree, interpreter):
-        await interpreter.log_debug('In ifclause eval_tree')
+        await interpreter.log.debug('In ifclause eval_tree')
         statements = []
         strings = []
 
@@ -67,7 +67,7 @@ class If(Conditional):
                 strings.append(f"\n{item}: {result}")
 
         result = tree['opfunc'](statements)
-        await interpreter.log_info(
+        await interpreter.log.info(
             f"If clause result: {result}: {strings}")
 
         return result
