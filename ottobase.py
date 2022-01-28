@@ -15,19 +15,19 @@ class VarHandler:
 
 class OttoBase:
     parser = None
+    vars = VarHandler()
 
     def __new__(cls, *args, **kwargs):
-        if len(args) == 0:
-            cls.parser.set_name(cls.__name__)
-            return cls.parser.set_parse_action(lambda x: cls(x))
-        elif type(args[0]) == ParseResults:
+
+        if len(args) > 0 and type(args[0]) == ParseResults:
             return super(OttoBase, cls).__new__(cls)
-        else:
-            cls.parser.set_name(cls.__name__)
-            return cls.parser.set_parse_action(lambda x: cls(x))
+
+        return cls.pre_parse(*args, **kwargs)
 
     def __init__(self, tokens, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*[], **{})
+        self.args = args
+        self.kwargs = kwargs
         self.tokens = tokens[0]
         for k, v in self.tokens.as_dict().items():
             setattr(self, k, v)
@@ -46,3 +46,14 @@ class OttoBase:
 
     async def eval(self, interpreter):
         return self.value
+
+    @classmethod
+    def pre_parse(cls, *args, **kwargs):
+        cls.parser.set_name(cls.__name__)
+        prs = cls.parser.set_parse_action(lambda x:
+                                          cls.post_parse(x, *args, **kwargs))
+        return prs
+
+    @classmethod
+    def post_parse(cls, tokens, *args, **kwargs):
+        return cls(tokens, *args, **kwargs)

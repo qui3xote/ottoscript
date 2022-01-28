@@ -4,15 +4,13 @@ from pyparsing import (
     Or,
     Suppress,
     Word,
-    Forward,
     delimited_list,
     Literal,
     Optional,
     dict_of,
     alphas,
     alphanums,
-    common,
-    ParseResults
+    common
 )
 from .keywords import reserved_words, AREA
 from .ottobase import OttoBase
@@ -25,6 +23,14 @@ class Var(OttoBase):
     parser = Group(Word("@", alphanums+'_')("name")
                    + Optional(":" + common.identifier)("attribute"))
 
+    @classmethod
+    def post_parse(cls, tokens, fetch=True, *args, **kwargs):
+        if fetch is True:
+            parse_dict = tokens[0].as_dict()
+            return cls.vars.get(parse_dict['name'])
+        else:
+            return cls(tokens, *args, **kwargs)
+
 
 class String(OttoBase):
     parser = Group(QuotedString(quote_char="'", unquoteResults=True)("value")
@@ -34,9 +40,6 @@ class String(OttoBase):
 
 class Numeric(OttoBase):
     parser = Group(common.number("value"))
-
-    def __str__(self):
-        return f"{self.value}"
 
 
 class Entity(OttoBase):
@@ -64,27 +67,20 @@ class Area(OttoBase):
 
 class List(OttoBase):
 
-    def __new__(cls, *args, **kwargs):
-        allowed_contents = Forward()
-        default = (String() ^ Numeric() ^ Entity() ^ Var())
+    @classmethod
+    def pre_parse(cls, content_parser=None, *args, **kwargs):
+
+        if content_parser is None:
+            content_parser = (String() ^ Numeric() ^ Entity() ^ Var())
+        else:
+            content_parser = Var() ^ content_parser
+
         parser = Group(Optional("(")
-                       + delimited_list(allowed_contents)("contents")
+                       + delimited_list(content_parser)("contents")
                        + Optional(")")
                        )
-
-        if len(args) > 0 and type(args[0]) == ParseResults:
-            return super(OttoBase, cls).__new__(cls)
-        elif len(args) == 0:
-            allowed_contents <<= default
-            parser.set_name(cls.__name__)
-            return parser.set_parse_action(lambda x: cls(x, default))
-        else:
-            allowed_contents <<= args[0]
-            parser.set_name(cls.__name__)
-            return parser.set_parse_action(lambda x: cls(x, args[0]))
-
-    def __init__(self, tokens, forward, *args, **kwargs):
-        super().__init__(tokens, *args, **kwargs)
+        parser.set_name(cls.__name__)
+        return parser.set_parse_action(lambda x: cls(x, *args, **kwargs))
 
 
 class Dict(OttoBase):
@@ -99,7 +95,7 @@ class Dict(OttoBase):
     parser = Group(Literal("(")
                    + _dict("contents")
                    + Literal(")")
-                   + Optional(":" + ident("attribute"))
+                   + Optional(Suppress(":") + ident)("attribute")
                    )
 
     async def eval(self, interpreter):
@@ -122,8 +118,8 @@ class Target(OttoBase):
         areas = []
 
         for i in self.inputs.contents:
-            if type(i) == Var:
-                i = interpreter.vars.get(i.name)
+            # if type(i) == Var:
+            #     i = self.vars.get(i.name)
 
             if type(i) == List:
                 i = i.contents
@@ -146,22 +142,12 @@ class Single(OttoBase):
                     )("inputs")
                    )
 
-    async def eval(self, interpreter):
-        entities = []
-        areas = []
+    @classmethod
+    def pre_parse(cls, parser=None, *args, **kwargs):
 
-        for i in self.inputs.contents:
-            if type(i) == Var:
-                i = interpreter.vars.get(i.name)
+        if parser is None:
+            parser = (String() ^ Numeric() ^ Entity() ^ Var())
+        else:
+            parser = Var() ^ parser
 
-            if type(i) == List:
-                i = i.contents
-            else:
-                i = [i]
-            for x in i:
-                if type(x) == Entity:
-                    entities.append(x.name)
-                if type(x) == Area:
-                    areas.append(x.name)
-
-        return {'entity_id': entities, 'area_id': areas}
+        return parser.set_parse_action(lambda x: cls(x, *args, **kwargs))
