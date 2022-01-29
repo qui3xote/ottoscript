@@ -41,7 +41,7 @@ class With(OttoBase):
     parser = Group(WITH + Dict()("value"))
 
     async def eval(self, interpreter):
-        return await self.value.eval()
+        return await self.value.eval(interpreter)
 
 
 class Command(OttoBase):
@@ -50,13 +50,13 @@ class Command(OttoBase):
     async def eval(self, interpreter):
 
         targets = await self.targets.eval(interpreter)
-        if hasattr(self, "with"):
-            data = await self.data.eval(interpreter)
+        if hasattr(self, "with_data"):
+            data = await self.with_data.eval(interpreter)
             targets.update(data)
 
         result = await interpreter.call_service(self.domain,
                                                 self.service_name,
-                                                targets)
+                                                **targets)
         return result
 
 
@@ -103,137 +103,141 @@ class Turn(Command):
     parser = Group(TURN + (ON ^ OFF)('command')
                    + ident("domain")
                    + Target()("targets")
-                   + Optional(With()("data")))
+                   + Optional(With()("with_data")))
 
     @property
     def service_name(self):
         return 'turn_'+self.command.lower()
 
 
+class Toggle(Command):
+    parser = Group(TOGGLE
+                   + ident("domain")
+                   + Target()("targets")
+                   )
+
+    @property
+    def service_name(self):
+        return 'toggle'
 
 
-#
-# class Toggle(Command):
-#     parser = TOGGLE \
-#               + ident("_domain") \
-#               + Target()("_targets")
-#
-#     @property
-#     def service_name(self):
-#         return 'toggle'
-#
-#
-# class Dim(Command):
-#     parser = DIM \
-#         + Target()("_targets") \
-#         + (CaselessKeyword("TO") | CaselessKeyword("BY"))("_type") \
-#         + Numeric()("_number") \
-#         + Optional('%')("_use_pct")
-#
-#     @property
-#     def with_data(self):
-#         if self._type.upper() == 'TO':
-#             param = 'brightness'
-#         else:
-#             param = 'brightness_step'
-#
-#         if hasattr(self, '_use_pct'):
-#             param += '_pct'
-#
-#         return {param: self._number.value}
-#
-#     @property
-#     def service_name(self):
-#         if self._number.value > 0 or hasattr(self, '_use_pct'):
-#             return "turn_on"
-#         else:
-#             return "turn_off"
-#
-#     @property
-#     def domain(self):
-#         return "light"
-#
-#
-# class Lock(Command):
-#     parser = (LOCK | UNLOCK)("_type") \
-#         + Target()("_targets") \
-#         + Optional(With())("_with")
-#
-#     @property
-#     def service_name(self):
-#         return self._type.lower()
-#
-#     @property
-#     def domain(self):
-#         return "lock"
-#
-#
-# class Arm(Command):
-#     _states = map(CaselessKeyword, "HOME AWAY NIGHT VACATION".split(" "))
-#     parser = ARM \
-#         + MatchFirst(_states)("_type") \
-#         + Target()("_targets") \
-#         + Optional(With())("_with")
-#
-#     @property
-#     def service_name(self):
-#         return f"alarm_arm_{self._type.lower()}"
-#
-#     @property
-#     def domain(self):
-#         return "alarm_control_panel"
-#
-#
-# class Disarm(Command):
-#     parser = DISARM \
-#         + Target()("_targets") \
-#         + Optional(With())("_with")
-#
-#     @property
-#     def service_name(self):
-#         return "alarm_disarm"
-#
-#     @property
-#     def domain(self):
-#         return "alarm_control_panel"
-#
-#
-# class OpenClose(Command):
-#     parser = (OPEN | CLOSE)("_type") \
-#         + Target()("_targets") \
-#         + Optional(TO + Numeric()("_position"))
-#
-#     @property
-#     def with_data(self):
-#         if hasattr(self, "_position"):
-#             position = self._position._value
-#         else:
-#             position = 100
-#
-#         if self._type.lower == 'close':
-#             position = 100 - position
-#
-#         return {'position': position}
-#
-#     @property
-#     def service_name(self):
-#         return "set_cover_position"
-#
-#     @property
-#     def domain(self):
-#         return "cover"
-#
-#
-# class Call(Command):
-#     parser = CALL \
-#         + Entity()("_service") \
-#         + Optional(ON + Target()("_targets")) \
-#         + Optional(With())("_with")
-#
-#     @property
-#     def domain(self):
-#         return self._service.domain
-#
-#     @property
-#     def service_name(self):
-#         return self._service.id
+class Dim(Command):
+    parser = Group(DIM
+                   + Target()("targets")
+                   + (CaselessKeyword("TO") | CaselessKeyword("BY"))("type")
+                   + Numeric()("number")
+                   + Optional('%')("use_pct")
+                   )
+
+    @property
+    def with_data(self):
+        if self._type.upper() == 'TO':
+            param = 'brightness'
+        else:
+            param = 'brightness_step'
+
+        if hasattr(self, '_use_pct'):
+            param += '_pct'
+
+        return {param: self.number.value}
+
+    @property
+    def service_name(self):
+        if self.number.value > 0 or hasattr(self, '_use_pct'):
+            return "turn_on"
+        else:
+            return "turn_off"
+
+    @property
+    def domain(self):
+        return "light"
+
+
+class Lock(Command):
+    parser = Group((LOCK ^ UNLOCK)("type")
+                   + Target()("targets")
+                   + Optional(With()("with_data"))
+                   )
+
+    @property
+    def service_name(self):
+        return self.type.lower()
+
+    @property
+    def domain(self):
+        return "lock"
+
+
+class Arm(Command):
+    _states = map(CaselessKeyword, "HOME AWAY NIGHT VACATION".split(" "))
+    parser = Group(ARM
+                   + MatchFirst(_states)("type")
+                   + Target()("targets")
+                   + Optional(With()("with_data"))
+                   )
+
+    @property
+    def service_name(self):
+        return f"alarm_arm_{self.type.lower()}"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class Disarm(Command):
+    parser = Group(DISARM
+                   + Target()("targets")
+                   + Optional(With()("with_data"))
+                   )
+
+    @property
+    def service_name(self):
+        return "alarm_disarm"
+
+    @property
+    def domain(self):
+        return "alarm_control_panel"
+
+
+class OpenClose(Command):
+    parser = Group((OPEN | CLOSE)("type")
+                   + Target()("targets")
+                   + Optional(TO + Numeric()("position"))
+                   )
+
+    @property
+    def with_data(self):
+        if hasattr(self, "position"):
+            position = self.position.value
+        else:
+            position = 100
+
+        if self.type.lower == 'close':
+            position = 100 - position
+
+        return {'position': position}
+
+    @property
+    def service_name(self):
+        return "set_cover_position"
+
+    @property
+    def domain(self):
+        return "cover"
+
+
+class Call(Command):
+    parser = Group(CALL
+                   + Entity()("_service")
+                   + Optional(ON + Target()("targets"))
+                   + Optional(With()("with_data"))
+                   )
+
+    @property
+    def domain(self):
+        return self.service.domain
+
+    @property
+    def service_name(self):
+        return self.service.id

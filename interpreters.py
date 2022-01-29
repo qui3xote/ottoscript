@@ -26,7 +26,7 @@ class Logger:
 
 class Service:
 
-    def call(domain, service_name, **kwargs):
+    def call(self, domain, service_name, **kwargs):
         return {'domain': domain,
                 'service_name': service_name, 'kwargs': kwargs}
 
@@ -116,10 +116,10 @@ class ExampleInterpreter:
         await self.log.info(f"Getting State of {entity_name}")
         return state.get(entity_name)
 
-    async def call_service(self, domain, service_name, kwargs):
+    async def call_service(self, domain, service_name, **kwargs):
         message = f"service.call({domain}, {service_name}, **{kwargs}))"
         await self.log.debug(message)
-        return service.call({domain}, {service_name}, **kwargs)
+        return service.call(domain, service_name, **kwargs)
 
     async def sleep(self, seconds):
         await self.log.info(f"task.sleep({seconds}))")

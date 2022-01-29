@@ -100,10 +100,10 @@ class Dict(OttoBase):
 
     async def eval(self, interpreter):
         if hasattr(self, "attribute"):
-            result = await self.value.get(self.attribute).eval(interpreter)
+            result = await self.contents.get(self.attribute).eval(interpreter)
         else:
             result = {}
-            for k, v in self.value.items():
+            for k, v in self.contents.items():
                 result[k] = await v.eval(interpreter)
         return result
 
