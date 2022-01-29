@@ -48,15 +48,22 @@ class Command(OttoBase):
     pass
 
     async def eval(self, interpreter):
+        kwargs = {}
 
-        targets = await self.targets.eval(interpreter)
+        if hasattr(self, 'targets'):
+            targets = await self.targets.eval(interpreter)
+            kwargs.update(targets)
+
         if hasattr(self, "with_data"):
             data = await self.with_data.eval(interpreter)
-            targets.update(data)
+            kwargs.update(data)
+
+        if hasattr(self, "static_data"):
+            kwargs.update(self.static_data)
 
         result = await interpreter.call_service(self.domain,
                                                 self.service_name,
-                                                **targets)
+                                                **kwargs)
         return result
 
 
@@ -98,7 +105,7 @@ class Set(Command):
 #         result = await interpreter.sleep(self._time.as_seconds)
 #         return result
 
-#
+
 class Turn(Command):
     parser = Group(TURN + (ON ^ OFF)('command')
                    + ident("domain")
@@ -207,13 +214,14 @@ class OpenClose(Command):
                    )
 
     @property
-    def with_data(self):
+    def static_data(self):
         if hasattr(self, "position"):
             position = self.position.value
         else:
             position = 100
 
-        if self.type.lower == 'close':
+        if self.type.lower() == 'close':
+            print('closing')
             position = 100 - position
 
         return {'position': position}
@@ -229,7 +237,7 @@ class OpenClose(Command):
 
 class Call(Command):
     parser = Group(CALL
-                   + Entity()("_service")
+                   + Entity()("service")
                    + Optional(ON + Target()("targets"))
                    + Optional(With()("with_data"))
                    )
