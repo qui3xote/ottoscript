@@ -3,6 +3,7 @@ from .keywords import *
 from .datatypes import *
 from .interpreters import ExampleInterpreter
 from .commands import *
+from .time import *
 
 # from pyparsing import (OneOrMore,
 #                        Or,

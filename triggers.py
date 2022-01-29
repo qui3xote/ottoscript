@@ -25,7 +25,7 @@ class StateChange(Trigger):
     @property
     def hold_seconds(self):
         if hasattr(self, '_hold'):
-            return self._hold.as_seconds
+            return self._hold.seconds
         else:
             return None
 
@@ -89,7 +89,7 @@ class SunEvent(Trigger):
             return 0
         else:
             sign = 1 if self._relative == "AFTER" else -1
-            return sign * self._time.as_seconds
+            return sign * self._time.seconds
 
     @property
     def days(self):

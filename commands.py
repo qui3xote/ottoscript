@@ -99,10 +99,10 @@ class Set(Command):
 #     parser = WAIT + (TimeStamp() | RelativeTime())("_time")
 #
 #     def __str__(self):
-#         return f"task.sleep({self._time.as_seconds})"
+#         return f"task.sleep({self._time.seconds})"
 #
 #     async def eval(self, interpreter):
-#         result = await interpreter.sleep(self._time.as_seconds)
+#         result = await interpreter.sleep(self._time.seconds)
 #         return result
 
 

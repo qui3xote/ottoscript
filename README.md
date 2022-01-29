@@ -126,8 +126,8 @@ class RelativeTime(BaseVocab):
     _parser = Numeric.parser()("_count") + (Hour.parser() | Minute.parser() | Second.parser())("_unit")
 
     @property
-    def as_seconds(self):
-        return self._count.value * self._unit.as_seconds
+    def seconds(self):
+        return self._count.value * self._unit.seconds
 ```
 
 ### Adding a Command
