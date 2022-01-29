@@ -22,7 +22,7 @@ WEEKEND = Or(map(CaselessKeyword, "WEEKEND WEEKENDS".split()))
 
 
 class Hour(OttoBase):
-    parser = Group(HOUR('time_unit'))
+    parser = Group(HOUR("string"))
 
     @property
     def seconds(self):
@@ -30,7 +30,7 @@ class Hour(OttoBase):
 
 
 class Minute(OttoBase):
-    parser = Group(MINUTE('time_unit'))
+    parser = Group(MINUTE("string"))
 
     @property
     def seconds(self):
@@ -38,7 +38,7 @@ class Minute(OttoBase):
 
 
 class Second(OttoBase):
-    parser = Group(SECOND('time_unit'))
+    parser = Group(SECOND('string'))
 
     @property
     def seconds(self):
@@ -48,10 +48,11 @@ class Second(OttoBase):
 class TimePart(OttoBase):
 
     @classmethod
-    def pre_parse(cls):
+    def pre_parse(cls, *args, **kwargs):
         cls.parser.set_name(cls.__name__)
-        cls.parser.set_parse_action(cls)
-        return Or(cls.parser, Var())
+        parser = Or(cls.parser, Var())
+        parser = parser.set_parse_action(lambda x: cls(x, *args, **kwargs))
+        return parser
 
 
 class DayOfWeek(TimePart):
@@ -66,39 +67,35 @@ class DayOfWeek(TimePart):
                    | WEEKEND.set_parse_action(lambda x: 'weekend')("string")
                    )
 
-    # @property
-    # def string(self):
-    #     return self.value
-
 
 class TimeStamp(TimePart):
     digits = Combine(Char(nums) * 2)
     parser = Group(digits("hour")
-                   + ":" + digits("minutes")
-                   + Optional(":" + digits("seconds"))
+                   + ":" + digits("minute")
+                   + Optional(":" + digits("second"))
                    )
 
     def __init__(self, tokens):
         if not hasattr(self, 'seconds'):
-            self.seconds = '00'
+            self.second = '00'
         super().__init__(tokens)
 
     @property
     def seconds(self):
         return int(self.hour) * 3600 \
-               + int(self.minutes) * 60 \
-               + int(self.seconds)
+            + int(self.minute) * 60 \
+            + int(self.second)
 
     @property
-    def value(self):
-        return "".join(self.tokens)
+    def string(self):
+        return ":".join([self.hour, self.minute, self.second])
 
 
 class RelativeTime(TimePart):
     parser = Group(Numeric()("count")
-                   + (Hour()
-                   | Minute()
-                   | Second())("unit")
+                   + (Hour()("unit")
+                   | Minute()("unit")
+                   | Second()("unit"))
                    )
 
     @property
@@ -107,16 +104,17 @@ class RelativeTime(TimePart):
 
     @property
     def string(self):
-        return f"{self.count} {self.unit}"
+        return f"{str(self.count.value)} {self.unit.string}"
 
 
 class Date(TimePart):
     date = common.iso8601_date
-    date = date.set_parse_action(common.convert_to_date)
     parser = Group(date("string"))
 
 
 class DateTime(TimePart):
-    datetime = common.iso8601_datetime
-    datetime = datetime.set_parse_action(common.convert_to_datetime)
-    parser = Group(datetime("string"))
+    parser = Group(Date()("date") + TimeStamp()("time"))
+
+    @property
+    def string(self):
+        return f"{self.date.string} {self.time.string}"

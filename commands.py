@@ -1,8 +1,16 @@
-from pyparsing import CaselessKeyword, Optional, Or, MatchFirst, Group, Literal
+from pyparsing import CaselessKeyword, Optional, MatchFirst, Group, Literal
 from .ottobase import OttoBase
-from .datatypes import Numeric, Entity, String, List, Area, ident, Dict, Var, Target
+from .datatypes import (Numeric,
+                        Entity,
+                        String,
+                        List,
+                        Area,
+                        ident,
+                        Dict,
+                        Var,
+                        Target)
 from .keywords import WITH, ON, TO, OFF, AREA
-#from .time import RelativeTime, TimeStamp
+from .time import RelativeTime, TimeStamp
 
 PASS = CaselessKeyword("PASS")
 SET = CaselessKeyword("SET")
@@ -95,15 +103,12 @@ class Set(Command):
         return results
 
 
-# class Wait(Command):
-#     parser = WAIT + (TimeStamp() | RelativeTime())("_time")
-#
-#     def __str__(self):
-#         return f"task.sleep({self._time.seconds})"
-#
-#     async def eval(self, interpreter):
-#         result = await interpreter.sleep(self._time.seconds)
-#         return result
+class Wait(Command):
+    parser = Group(WAIT + (TimeStamp()("time") | RelativeTime()("time")))
+
+    async def eval(self, interpreter):
+        result = await interpreter.sleep(self.time.seconds)
+        return result
 
 
 class Turn(Command):
@@ -114,7 +119,7 @@ class Turn(Command):
 
     @property
     def service_name(self):
-        return 'turn_'+self.command.lower()
+        return 'turn_' + self.command.lower()
 
 
 class Toggle(Command):
