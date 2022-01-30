@@ -34,7 +34,7 @@ class StateTrigger(OttoBase):
         return [subclass() for subclass in cls.__subclasses__()]
 
 
-class State(StateTrigger):
+class StateChange(StateTrigger):
     term = (Entity() | Numeric() | String())
     parser = Group(List(Entity())("entities")
                    + CaselessKeyword("CHANGES")
