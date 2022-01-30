@@ -1,5 +1,5 @@
 import operator as op
-from pyparsing import (Group, Or, OneOrMore, opAssoc, Keyword,
+from pyparsing import (Group, Or, OneOrMore, opAssoc,
                        infixNotation, Forward, Optional, MatchFirst)
 from .datatypes import String, Numeric, Var, Entity
 from .ottobase import OttoBase
