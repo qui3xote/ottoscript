@@ -38,9 +38,12 @@ class State(StateTrigger):
     term = (Entity() | Numeric() | String())
     parser = Group(List(Entity())("entities")
                    + CaselessKeyword("CHANGES")
-                   + Optional(FROM + term("_old"))
-                   + Optional(TO + term("_new"))
-                   + Optional(FOR + (TimeStamp() | RelativeTime())("_hold"))
+                   + Optional(FROM + (Entity()("_old")
+                                      | Numeric()("_old") | String()("_old")))
+                   + Optional(TO + (Entity()("_new")
+                                    | Numeric()("_new") | String()("_new")))
+                   + Optional(FOR + (TimeStamp()("_hold")
+                                     | RelativeTime()("_hold")))
                    )
 
     @property
@@ -50,21 +53,21 @@ class State(StateTrigger):
         else:
             return None
 
-    @property
+    @ property
     def old(self):
         if hasattr(self, "_old"):
             return self._old.value
         else:
             return None
 
-    @property
+    @ property
     def new(self):
         if hasattr(self, "_new"):
             return self._new.value
         else:
             return None
 
-    @property
+    @ property
     def type(self):
         return 'state'
 
@@ -76,11 +79,11 @@ class TimeTrigger(OttoBase):
         strings = [f"once({x[0]} {x[1]} + {self.offset}s)" for x in prod]
         return strings
 
-    @property
+    @ property
     def type(self):
         return 'time'
 
-    @property
+    @ property
     def days(self):
         if not hasattr(self, "_days"):
             return ['']
@@ -91,7 +94,7 @@ class TimeTrigger(OttoBase):
 
             return result
 
-    @classmethod
+    @ classmethod
     def parsers(cls):
         return [subclass() for subclass in cls.__subclasses__()]
 
@@ -106,7 +109,7 @@ class WeeklySchedule(TimeTrigger):
 
         self.times = [x.string for x in self._times.contents]
 
-    @property
+    @ property
     def offset(self):
         return 0
 
@@ -116,12 +119,12 @@ class SunEvent(TimeTrigger):
                             + (BEFORE | AFTER)("relative")
                             )("_offset")
                    + (SUNRISE("_time")
-                       | SUNSET("_time")
+                      | SUNSET("_time")
                       )
                    + Optional(ON + List(DayOfWeek())("_days"))
                    )
 
-    @property
+    @ property
     def offset(self):
         if not hasattr(self, "_offset"):
             return 0
@@ -129,6 +132,6 @@ class SunEvent(TimeTrigger):
             sign = 1 if self._offset[1] == "AFTER" else -1
             return sign * self._offset[0].seconds
 
-    @property
+    @ property
     def times(self):
         return [self._time.lower()]
