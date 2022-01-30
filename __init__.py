@@ -5,6 +5,18 @@ from .interpreters import ExampleInterpreter
 from .commands import *
 from .time import *
 from .conditionals import *
+from .triggers import *
+
+
+#class OttoParser(OttoBase):
+#    globals = GlobalVarHandler.parser()
+#     _trigger = Or(Trigger.child_parsers())
+#     _when_expr = Suppress(WHEN) + _trigger
+#     _parser = _globals("globals") \
+#         + Optional(AutoDefinition.parser())("_controls") \
+#         + OneOrMore(_when_expr)("triggers") \
+#         + Group(Actions.parser())('actions')
+    #
 
 # from pyparsing import (OneOrMore,
 #                        Or,

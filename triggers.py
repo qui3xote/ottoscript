@@ -1,5 +1,7 @@
+from itertools import product
 from pyparsing import (CaselessKeyword,
                        Optional,
+                       Group,
                        )
 from .ottobase import OttoBase
 from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
@@ -7,25 +9,44 @@ from .datatypes import Entity, Numeric, List, String
 from .time import RelativeTime, TimeStamp, DayOfWeek
 
 
-class Trigger(OttoBase):
-    _parser = None
+class StateTrigger(OttoBase):
 
-    def __str__(self):
-        return " ".join([str(x) for x in self.tokens])
+    def strings(self):
+        strings = []
+
+        for e in self.entities.contents:
+            string = []
+            if self.new is not None:
+                string.append(f"{e.name} == '{self.new}'")
+
+            if self.old is not None:
+                string.append(f"{e.name}.old == '{self.old}'")
+
+            if len(string) == 0:
+                string.append(f"{e.name}")
+
+            strings.append(" and ".join(string))
+
+        return strings
+
+    @classmethod
+    def parsers(cls):
+        return [subclass() for subclass in cls.__subclasses__()]
 
 
-class StateChange(Trigger):
-    _term = (Entity.parser() | Numeric.parser() | String.parser())
-    _parser = List.parser(Entity.parser())("_entities") \
-        + CaselessKeyword("CHANGES") \
-        + Optional(FROM + _term("_old")) \
-        + Optional(TO + _term("_new")) \
-        + Optional(FOR + (TimeStamp.parser() | RelativeTime.parser())("_hold"))
+class State(StateTrigger):
+    term = (Entity() | Numeric() | String())
+    parser = Group(List(Entity())("entities")
+                   + CaselessKeyword("CHANGES")
+                   + Optional(FROM + term("_old"))
+                   + Optional(TO + term("_new"))
+                   + Optional(FOR + (TimeStamp() | RelativeTime())("_hold"))
+                   )
 
     @property
     def hold_seconds(self):
-        if hasattr(self, '_hold'):
-            return self._hold.seconds
+        if hasattr(self, 'hold'):
+            return self.hold.seconds
         else:
             return None
 
@@ -47,61 +68,67 @@ class StateChange(Trigger):
     def type(self):
         return 'state'
 
+
+class TimeTrigger(OttoBase):
+
+    def strings(self):
+        prod = product(self.days, self.times)
+        strings = [f"once({x[0]} {x[1]} + {self.offset}s)" for x in prod]
+        return strings
+
     @property
-    def entities(self):
-        return [e.name for e in self._entities.contents]
-
-
-class TimeTrigger(Trigger):
-    _parser = List.parser([TimeStamp.parser()])("_times") \
-            + Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
+    def type(self):
+        return 'time'
 
     @property
     def days(self):
         if not hasattr(self, "_days"):
             return ['']
         else:
-            return [x.value for x in self._days.contents]
+            result = []
+            for parser in self._days.contents:
+                result.extend(parser.days)
+
+            return result
+
+    @classmethod
+    def parsers(cls):
+        return [subclass() for subclass in cls.__subclasses__()]
+
+
+class WeeklySchedule(TimeTrigger):
+    parser = Group(List(TimeStamp())("_times")
+                   + Optional(ON + List(DayOfWeek())("_days"))
+                   )
+
+    def __init__(self, tokens):
+        super().__init__(tokens)
+
+        self.times = [x.string for x in self._times.contents]
 
     @property
-    def times(self):
-        return [x.value for x in self._times.contents]
-
-    @property
-    def offset_seconds(self):
+    def offset(self):
         return 0
 
+
+class SunEvent(TimeTrigger):
+    parser = Group(Optional(RelativeTime()("time")
+                            + (BEFORE | AFTER)("relative")
+                            )("_offset")
+                   + (SUNRISE("_time")
+                       | SUNSET("_time")
+                      )
+                   + Optional(ON + List(DayOfWeek())("_days"))
+                   )
+
     @property
-    def type(self):
-        return 'time'
-
-
-class SunEvent(Trigger):
-    _parser = Optional(RelativeTime.parser()("_time")
-                       + (BEFORE | AFTER)("_relative")
-                       )("_offset") \
-              + (SUNRISE | SUNSET)("_sunevent") \
-              + Optional(ON + List.parser([DayOfWeek.parser()])("_days"))
-
-    @property
-    def offset_seconds(self):
+    def offset(self):
         if not hasattr(self, "_offset"):
             return 0
         else:
-            sign = 1 if self._relative == "AFTER" else -1
-            return sign * self._time.seconds
-
-    @property
-    def days(self):
-        if not hasattr(self, "_days"):
-            return ['']
-        else:
-            return [x.value for x in self._days.contents]
+            sign = 1 if self._offset[1] == "AFTER" else -1
+            return sign * self._offset[0].seconds
 
     @property
     def times(self):
-        return [self._sunevent.lower()]
-
-    @property
-    def type(self):
-        return 'time'
+        return [self._time.lower()]

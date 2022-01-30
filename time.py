@@ -56,16 +56,25 @@ class TimePart(OttoBase):
 
 
 class DayOfWeek(TimePart):
-    parser = Group(MONDAY.set_parse_action(lambda x: 'mon')("string")
-                   | TUESDAY.set_parse_action(lambda x: 'tue')("string")
-                   | WEDNESDAY.set_parse_action(lambda x: 'wed')("string")
-                   | THURSDAY.set_parse_action(lambda x: 'thu')("string")
-                   | FRIDAY.set_parse_action(lambda x: 'fri')("string")
-                   | SATURDAY.set_parse_action(lambda x: 'sat')("string")
-                   | SUNDAY.set_parse_action(lambda x: 'sun')("string")
-                   | WEEKDAY.set_parse_action(lambda x: 'weekday')("string")
-                   | WEEKEND.set_parse_action(lambda x: 'weekend')("string")
+    parser = Group(MONDAY("option")
+                   | TUESDAY("option")
+                   | WEDNESDAY("option")
+                   | THURSDAY("option")
+                   | FRIDAY("option")
+                   | SATURDAY("option")
+                   | SUNDAY("option")
+                   | WEEKDAY("option")
+                   | WEEKEND("option")
                    )
+
+    @property
+    def days(self):
+        if self.option == "WEEKDAY":
+            return ["mon", "tue", "wed", "thu", "fri"]
+        elif self.option == "WEEKEND":
+            return ["sat", "sun"]
+        else:
+            return [self.option.lower()[:3]]
 
 
 class TimeStamp(TimePart):
