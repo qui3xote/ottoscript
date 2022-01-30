@@ -4,6 +4,7 @@ from .datatypes import *
 from .interpreters import ExampleInterpreter
 from .commands import *
 from .time import *
+from .conditionals import *
 
 # from pyparsing import (OneOrMore,
 #                        Or,

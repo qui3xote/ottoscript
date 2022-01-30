@@ -52,6 +52,7 @@ class Entity(OttoBase):
     @property
     def name(self):
         name = ".".join([self.domain, self.id])
+
         if hasattr(self, "attribute"):
             name = ".".join([name, self.attribute])
         return name

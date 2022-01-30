@@ -8,9 +8,9 @@ from .ottobase import OttoBase, Var
 
 
 class AutoDefinition(OttoBase):
-    _parser = AUTOMATION \
+    parser = AUTOMATION \
               + Word(alphas + "_", alphanums+"_")("_name") \
-              + Optional(Var.parser()('_trigger_var')) \
+              + Optional(Var()('_trigger_var')) \
               + Optional(RESTART('_restart'))
 
     @property

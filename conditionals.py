@@ -1,52 +1,97 @@
-from pyparsing import Or, OneOrMore, opAssoc, infixNotation, Forward, Optional
+import operator as op
+from pyparsing import (Group, Or, OneOrMore, opAssoc, Keyword,
+                       infixNotation, Forward, Optional, MatchFirst)
+from .datatypes import String, Numeric, Var, Entity
 from .ottobase import OttoBase
 from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END
-from .expressions import Comparison, Assignment
-from .commands import Command
+from .commands import Command, Assignment
+
+
+class Comparison(OttoBase):
+
+    operators = {
+        '==': op.eq,
+        '<=': op.le,
+        '>=': op.ge,
+        '!=': op.ne,
+        '<': op.lt,
+        '>': op.gt
+    }
+
+    term = (String()
+            | Numeric()
+            | Entity()
+            | Var()
+            )
+
+    parser = Group(term("left")
+                   + MatchFirst([x for x in operators.keys()])("operand")
+                   + term("right")
+                   )
+
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        # TODO: This call to the class shouldn't be necessary.
+        self.opfunc = self.operators[self.operand]
+        self.left = self.left[0]
+        self.right = self.right[0]
+
+    async def eval(self, interpreter):
+        left = await self.left.eval(interpreter)
+        right = await self.right.eval(interpreter)
+        result = self.opfunc(left, right)
+
+        msg = f"Condition {result}: {self.opfunc.__name__}"
+        msg += f" {str(self.right)} {self.operand} {self.left}"
+        msg += f" evaluated to ({right} {self.operand} {left})"
+        await interpreter.log.debug(msg)
+        return result
 
 
 class Conditional(OttoBase):
     forward = Forward()
 
-    def __str__(self):
-        return " ".join([str(x) for x in self.tokens])
-
 
 class Then(Conditional):
-    _instructions = Or(Command.child_parsers())
-    _assignment = Assignment.parser()
-    _parser = Optional(THEN) \
-        + OneOrMore(_instructions
-                    | _assignment
-                    | Conditional.forward)("_commands")
+    instructions = Or(Command.parsers())
+    parser = Group(Optional(THEN)
+                   + OneOrMore(MatchFirst(Command.parsers())
+                               | Assignment()
+                               | Conditional.forward)("commands")
+                   )
 
     async def eval(self, interpreter):
-        await interpreter.log.debug(f"THEN {self._commands}")
-        if type(self._commands) != list:
-            await self._commands.eval(interpreter)
-        else:
-            for command in self._commands:
-                await interpreter.log.debug(f"THEN {command}")
-                await command.eval(interpreter)
+        results = []
+        for command in self.commands:
+            await interpreter.log.debug(f"THEN {command}")
+            result = await command.eval(interpreter)
+            results.append(result)
+        return results
 
 
 class If(Conditional):
-    _operators = {
-                    'AND': all,
-                    'OR': any,
-                    'NOT': lambda x: not x
-                    }
+    operators = {
+        'AND': all,
+        'OR': any,
+        'NOT': lambda x: not x
+    }
 
-    _parser = IF \
-        + infixNotation(Comparison.parser(), [
-                            (NOT, 1, opAssoc.RIGHT, ),
-                            (AND, 2, opAssoc.LEFT, ),
-                            (OR, 2, opAssoc.LEFT, ),
-                            ])("_conditions")
+    parser = Group(IF
+                   + infixNotation(Comparison(), [
+                       (NOT, 1, opAssoc.RIGHT, ),
+                       (AND, 2, opAssoc.LEFT, ),
+                       (OR, 2, opAssoc.LEFT, ),
+                   ])("conditions")
+                   )
 
     def __init__(self, tokens):
         super().__init__(tokens)
-        self._eval_tree = self.build_evaluator_tree()
+        if type(self.conditions) == Comparison:
+            conditions = ["AND", self.conditions]
+        else:
+            conditions = self.conditions
+
+        self._eval_tree = self.build_evaluator_tree(conditions)
 
     async def eval(self, interpreter):
         await interpreter.log.debug('In ifclause eval')
@@ -60,7 +105,7 @@ class If(Conditional):
 
         for item in tree['items']:
             if type(item) == dict:
-                statements.append(await self.eval_tree(item))
+                statements.append(await self.eval_tree(item, interpreter))
             if type(item) == Comparison:
                 result = await item.eval(interpreter)
                 statements.append(result)
@@ -72,20 +117,15 @@ class If(Conditional):
 
         return result
 
-    def build_evaluator_tree(self):
-        if type(self._conditions) == Comparison:
-            tokens = ["AND", self._conditions]
-        else:
-            tokens = self._conditions
-
+    def build_evaluator_tree(self, conditions):
         comparisons = []
 
-        for item in tokens:
+        for item in conditions:
             if type(item) == list:
                 comparisons.append(self.build_evaluator_tree(item))
             elif type(item) == str:
                 opname = item.upper()
-                operand = self._operators[opname]
+                operand = self.operators[opname]
             else:
                 comparisons.append(item)
 
@@ -93,51 +133,64 @@ class If(Conditional):
 
 
 class IfThen(Conditional):
-    _parser = If.parser()("_if") \
-            + Then.parser()("_then") \
-            + END
+    parser = Group(If()("conditions")
+                   + Then()("actions")
+                   + END
+                   )
 
     async def eval(self, interpreter):
-        conditions_result = await self._if.eval(interpreter)
+        conditions_result = await self.conditions.eval(interpreter)
         if conditions_result is True:
-            await self._then.eval(interpreter)
-            return True
+            result = await self.actions.eval(interpreter)
+            print(result)
+            return result
+
+        return False
 
 
 class IfThenElse(Conditional):
-    _parser = If.parser()("_if") \
-            + Then.parser()("_then") \
-            + Optional(ELSE + (Conditional.forward
-                               | Then.parser())("_else")) \
-            + END
+    parser = Group(If()("conditions")
+                   + Then()("actions")
+                   + Optional(ELSE + (Conditional.forward("fallback")
+                                      | Then()("fallback")
+                                      )
+                              )
+                   + END
+                   )
 
     async def eval(self, interpreter):
-        conditions_result = await self._if.eval(interpreter)
+        conditions_result = await self.conditions.eval(interpreter)
 
+        result = None
         if conditions_result is True:
-            await self._then.eval(interpreter)
+            result = await self.actions.eval(interpreter)
         else:
-            if hasattr(self, "_else"):
-                await self._else.eval(interpreter)
+            if hasattr(self, "fallback"):
+                result = await self.fallback.eval(interpreter)
+
+        return result
 
 
 class Case(Conditional):
-    _parser = CASE  \
-            + OneOrMore(IfThen.parser())("_statements") \
-            + Optional(ELSE + Then.parser()("_else")) \
-            + END
+    parser = Group(CASE
+                   + OneOrMore(IfThen())("options")
+                   + Optional(ELSE + Then()("fallback"))
+                   + END)
 
     async def eval(self, interpreter):
-        foundmatch = False
+        selected = None
 
-        for statement in self._statements:
-            if await statement.eval(interpreter) is True:
-                foundmatch = True
+        for n, statement in enumerate(self.options):
+            if await statement.eval(interpreter) is not False:
+                selected = n + 1
                 break
 
-        if foundmatch is False:
-            if hasattr(self, '_else'):
-                await self._else.eval(interpreter)
+        if selected is None:
+            if hasattr(self, 'fallback'):
+                await self.fallback.eval(interpreter)
+                selected = 0
+
+        return selected
 
 
-Conditional.forward <<= Or(IfThenElse.parser(), Case.parser())
+Conditional.forward <<= Or(IfThenElse(), Case())

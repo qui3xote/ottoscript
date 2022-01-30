@@ -74,6 +74,10 @@ class Command(OttoBase):
                                                 **kwargs)
         return result
 
+    @classmethod
+    def parsers(cls):
+        return [subclass() for subclass in cls.__subclasses__()]
+
 
 class Pass(Command):
     parser = Group(PASS('pass'))
