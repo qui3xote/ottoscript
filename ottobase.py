@@ -3,19 +3,33 @@ from pyparsing import ParseResults, CaselessKeyword
 
 class VarHandler:
     def __init__(self):
-        self.locals = {}
-        self.globals = {}
+        self.internal = {}
+        self.external = {}
 
     def get(self, key):
-        return self.locals.get(key)
+        internal = self.internal.get(key)
 
-    def update(self, key, value):
-        self.locals.update({key: value})
+        if internal is None:
+            print(f"{key} not found in internal. Returning external")
+            return self.external.get(key)
+        else:
+            return internal
+
+    def update(self, dictionary):
+        print(f"Updating internals with {dictionary}")
+        self.internal.update(dictionary)
+
+    def update_global(self, dictionary):
+        print(f"Updating external with {dictionary}")
+        self.external.update(dictionary)
+
+
+class OttoContext:
+    def __init__(self, var_handler):
+        self.vars = var_handler
 
 
 class OttoBase:
-    parser = None
-    vars = VarHandler()
 
     def __new__(cls, *args, **kwargs):
 
@@ -57,3 +71,10 @@ class OttoBase:
     @classmethod
     def post_parse(cls, tokens, *args, **kwargs):
         return cls(tokens, *args, **kwargs)
+
+    @classmethod
+    def set_context(cls, context=None):
+        if context is None:
+            cls.ctx = OttoContext(VarHandler())
+        else:
+            cls.ctx = context

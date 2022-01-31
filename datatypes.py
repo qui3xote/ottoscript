@@ -27,7 +27,7 @@ class Var(OttoBase):
     def post_parse(cls, tokens, fetch=True, *args, **kwargs):
         if fetch is True:
             parse_dict = tokens[0].as_dict()
-            return cls.vars.get(parse_dict['name'])
+            return cls.ctx.vars.get(parse_dict['name'])
         else:
             return cls(tokens, *args, **kwargs)
 

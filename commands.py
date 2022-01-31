@@ -40,9 +40,13 @@ class Assignment(OttoBase):
                       )("value")
                    )
 
-    def __init__(self, tokens):
+    def __init__(self, tokens, namespace='internal'):
         super().__init__(tokens)
-        self.vars.update(self.var.name, self.value[0])
+        print(f"Using {namespace} for {self.var.name} self.value[0]")
+        if namespace == 'internal':
+            self.ctx.vars.update({self.var.name: self.value[0]})
+        elif namespace == 'external':
+            self.ctx.vars.update_global({self.var.name: self.value[0]})
 
 
 class With(OttoBase):

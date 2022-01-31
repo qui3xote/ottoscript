@@ -1,9 +1,11 @@
-from pyparsing import (Group, Optional, MatchFirst, Suppress, OneOrMore)
+from pyparsing import (Group, Optional, MatchFirst,
+                       Suppress, OneOrMore, ZeroOrMore)
 from .keywords import AUTOMATION, RESTART, WHEN
-from .datatypes import ident
-from .triggers import StateTrigger, TimeTrigger
-from .ottobase import OttoBase, Var
+from .ottobase import OttoBase
+from .datatypes import ident, Var
+from .commands import Assignment
 from .conditionals import IfThenElse, Case, Then
+from .triggers import StateTrigger, TimeTrigger
 
 
 class AutoControls(OttoBase):
@@ -26,8 +28,8 @@ class AutoControls(OttoBase):
 
 
 class Actions(OttoBase):
-    conditionals = (IfThenElse.parser() | Case.parser())
-    parser = Group(OneOrMore(conditionals | Then.parser())("clauses"))
+    conditionals = (IfThenElse() | Case())
+    parser = Group(OneOrMore(conditionals | Then())("clauses"))
 
     # @property
     # def clauses(self):
@@ -43,20 +45,16 @@ class Actions(OttoBase):
 
 class Auto(OttoBase):
     trigger = Suppress(WHEN) \
-        + MatchFirst(StateTrigger.parsers() | TimeTrigger.parsers())
+        + MatchFirst(StateTrigger.parsers() + TimeTrigger.parsers())
 
     parser = Group(AutoControls()("controls")
                    + OneOrMore(trigger)("triggers")
                    + Group(Actions())('actions'))
 
 
+class GlobalParser(OttoBase):
+    parser = Group(ZeroOrMore(Assignment("external"))("assignments"))
 
-#
-#
-#
-#
-# class GlobalVarHandler(OttoBase):
-#     _parser = Group(ZeroOrMore(Assignment.parser())("_assignments"))
 #     _stashed_vars = None
 #
 #     def __init__(self, tokens):
