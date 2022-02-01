@@ -31,7 +31,6 @@ class Comparison(OttoBase):
 
     def __init__(self, tokens):
         super().__init__(tokens)
-        # TODO: This call to the class shouldn't be necessary.
         self.opfunc = self.operators[self.operand]
         self.left = self.left[0]
         self.right = self.right[0]
@@ -56,7 +55,7 @@ class Then(Conditional):
     instructions = Or(Command.parsers())
     parser = Group(Optional(THEN)
                    + OneOrMore(MatchFirst(Command.parsers())
-                               | Assignment()
+                               | Assignment("internal")
                                | Conditional.forward)("commands")
                    )
 

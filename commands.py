@@ -42,7 +42,6 @@ class Assignment(OttoBase):
 
     def __init__(self, tokens, namespace='internal'):
         super().__init__(tokens)
-        print(f"Using {namespace} for {self.var.name} self.value[0]")
         if namespace == 'internal':
             self.ctx.vars.update({self.var.name: self.value[0]})
         elif namespace == 'external':
@@ -57,7 +56,6 @@ class With(OttoBase):
 
 
 class Command(OttoBase):
-    pass
 
     async def eval(self, interpreter):
         kwargs = {}
@@ -145,7 +143,9 @@ class Dim(Command):
     parser = Group(DIM
                    + Target()("targets")
                    + (CaselessKeyword("TO") | CaselessKeyword("BY"))("type")
-                   + Numeric()("number")
+                   + (Numeric()("number")
+                      | Var()("number")
+                      | Entity()("number"))
                    + Optional('%')("use_pct")
                    )
 
@@ -223,7 +223,9 @@ class Disarm(Command):
 class OpenClose(Command):
     parser = Group((OPEN | CLOSE)("type")
                    + Target()("targets")
-                   + Optional(TO + Numeric()("position"))
+                   + Optional(TO + (Numeric()("position")
+                                    | Var()("position")
+                                    | Entity()("position")))
                    )
 
     @property

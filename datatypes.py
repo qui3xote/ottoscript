@@ -119,8 +119,6 @@ class Target(OttoBase):
         areas = []
 
         for i in self.inputs.contents:
-            # if type(i) == Var:
-            #     i = self.vars.get(i.name)
 
             if type(i) == List:
                 i = i.contents

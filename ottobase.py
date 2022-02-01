@@ -10,17 +10,14 @@ class VarHandler:
         internal = self.internal.get(key)
 
         if internal is None:
-            print(f"{key} not found in internal. Returning external")
             return self.external.get(key)
         else:
             return internal
 
     def update(self, dictionary):
-        print(f"Updating internals with {dictionary}")
         self.internal.update(dictionary)
 
     def update_global(self, dictionary):
-        print(f"Updating external with {dictionary}")
         self.external.update(dictionary)
 
 
@@ -32,7 +29,6 @@ class OttoContext:
 class OttoBase:
 
     def __new__(cls, *args, **kwargs):
-
         if len(args) > 0 and type(args[0]) == ParseResults:
             return super(OttoBase, cls).__new__(cls)
 
@@ -40,11 +36,14 @@ class OttoBase:
 
     def __init__(self, tokens, *args, **kwargs):
         super().__init__(*[], **{})
-        self.args = args
-        self.kwargs = kwargs
         self.tokens = tokens[0]
-        for k, v in self.tokens.as_dict().items():
-            setattr(self, k, v)
+        try:
+            for k, v in self.tokens.as_dict().items():
+                setattr(self, k, v)
+        except Exception as error:
+            print(f"Failed to init {type(self)}")
+            print(tokens)
+            print(error)
 
     def debugtree(self, levels=5):
         if levels == 0:
@@ -55,7 +54,7 @@ class OttoBase:
             if type(v) in (str, list, int, float, dict, CaselessKeyword):
                 dictionary[k] = v
             else:
-                dictionary[k] = v.debugtree(levels=levels-1)
+                dictionary[k] = v.debugtree(levels=levels - 1)
         return dictionary
 
     async def eval(self, interpreter):
@@ -64,9 +63,9 @@ class OttoBase:
     @classmethod
     def pre_parse(cls, *args, **kwargs):
         cls.parser.set_name(cls.__name__)
-        prs = cls.parser.set_parse_action(lambda x:
-                                          cls.post_parse(x, *args, **kwargs))
-        return prs
+        prs = cls.parser.copy()
+        return prs.set_parse_action(lambda x:
+                                    cls.post_parse(x, *args, **kwargs))
 
     @classmethod
     def post_parse(cls, tokens, *args, **kwargs):
