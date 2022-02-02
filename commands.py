@@ -279,7 +279,7 @@ class OpenClose(Command):
         else:
             position = 100
 
-        if self._type.lower == 'close':
+        if self._type.lower() == 'close':
             position = 100 - position
 
         return {'position': position}
