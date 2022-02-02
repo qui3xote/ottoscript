@@ -1,6 +1,6 @@
 from pyparsing import Or, OneOrMore, opAssoc, infixNotation, Forward, Optional
 from .ottobase import OttoBase
-from .vocab import IF, AND, OR, NOT, THEN, ELSE, CASE, END
+from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END
 from .expressions import Comparison, Assignment
 from .commands import Command
 
@@ -20,14 +20,14 @@ class Then(Conditional):
                     | _assignment
                     | Conditional.forward)("_commands")
 
-    async def eval(self):
-        await self.interpreter.log_info(f"{self._commands}")
+    async def eval(self, interpreter):
+        await interpreter.log_debug(f"THEN {self._commands}")
         if type(self._commands) != list:
-            await self._commands.eval()
+            await self._commands.eval(interpreter)
         else:
             for command in self._commands:
-                await self.interpreter.log_info(f"{command}")
-                await command.eval()
+                await interpreter.log_debug(f"THEN {command}")
+                await command.eval(interpreter)
 
 
 class If(Conditional):
@@ -48,13 +48,13 @@ class If(Conditional):
         super().__init__(tokens)
         self._eval_tree = self.build_evaluator_tree()
 
-    async def eval(self):
-        await self.interpreter.log_debug('In ifclause eval')
-        result = await self.eval_tree(self._eval_tree)
+    async def eval(self, interpreter):
+        await interpreter.log_debug('In ifclause eval')
+        result = await self.eval_tree(self._eval_tree, interpreter)
         return result
 
-    async def eval_tree(self, tree):
-        await self.interpreter.log_debug('In ifclause eval_tree')
+    async def eval_tree(self, tree, interpreter):
+        await interpreter.log_debug('In ifclause eval_tree')
         statements = []
         strings = []
 
@@ -62,12 +62,12 @@ class If(Conditional):
             if type(item) == dict:
                 statements.append(await self.eval_tree(item))
             if type(item) == Comparison:
-                result = await item.eval()
+                result = await item.eval(interpreter)
                 statements.append(result)
                 strings.append(f"\n{item}: {result}")
 
         result = tree['opfunc'](statements)
-        await self.interpreter.log_info(
+        await interpreter.log_info(
             f"If clause result: {result}: {strings}")
 
         return result
@@ -97,10 +97,10 @@ class IfThen(Conditional):
             + Then.parser()("_then") \
             + END
 
-    async def eval(self):
-        conditions_result = await self._if.eval()
+    async def eval(self, interpreter):
+        conditions_result = await self._if.eval(interpreter)
         if conditions_result is True:
-            await self._then.eval()
+            await self._then.eval(interpreter)
             return True
 
 
@@ -111,14 +111,14 @@ class IfThenElse(Conditional):
                                | Then.parser())("_else")) \
             + END
 
-    async def eval(self):
-        conditions_result = await self._if.eval()
+    async def eval(self, interpreter):
+        conditions_result = await self._if.eval(interpreter)
 
         if conditions_result is True:
-            await self._then.eval()
+            await self._then.eval(interpreter)
         else:
             if hasattr(self, "_else"):
-                await self._else.eval()
+                await self._else.eval(interpreter)
 
 
 class Case(Conditional):
@@ -127,17 +127,17 @@ class Case(Conditional):
             + Optional(ELSE + Then.parser()("_else")) \
             + END
 
-    async def eval(self):
+    async def eval(self, interpreter):
         foundmatch = False
 
         for statement in self._statements:
-            if await statement.eval() is True:
+            if await statement.eval(interpreter) is True:
                 foundmatch = True
                 break
 
         if foundmatch is False:
             if hasattr(self, '_else'):
-                await self._else.eval()
+                await self._else.eval(interpreter)
 
 
 Conditional.forward <<= Or(IfThenElse.parser(), Case.parser())

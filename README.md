@@ -137,10 +137,10 @@ class Toggle(BaseCommand):
     _kwd = CaselessKeyword("TOGGLE")
     _parser = _kwd + Entity.parser()("_entity")
 
-    async def eval(self):
+    async def eval(self, interpreter):
         servicename = 'toggle'
         kwargs = {'entity_id': self._entity.name}
-        result = await self.interpreter.call_service(self._entity.domain, servicename, kwargs)
+        result = await interpreter.call_service(self._entity.domain, servicename, kwargs)
         return result
 ```
 
