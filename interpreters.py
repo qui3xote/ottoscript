@@ -1,5 +1,3 @@
-from itertools import product
-
 
 class PrintLogger:
 
@@ -95,8 +93,12 @@ class Registrar:
 class TestInterpreter:
     """Convert ottoscript commands to pyscript commands"""
 
-    def __init__(self, logger):
-        self.log = logger
+    def __init__(self, logger=None):
+
+        if logger is None:
+            self.log = PrintLogger()
+        else:
+            self.log = logger
 
     async def set_state(self, entity_name, value=None,
                         new_attributes=None, kwargs=None):
@@ -122,77 +124,3 @@ class TestInterpreter:
     async def sleep(self, seconds):
         await self.log.info(f"task.sleep({seconds}))")
         return task.sleep(seconds)
-
-
-# class ExampleInterpreter:
-#     """Convert ottoscript commands to pyscript commands"""
-#
-#     def __init__(self, log_id='Test', debug_as_info=True):
-#         self.debug_as_info = debug_as_info
-#         self.trigger_funcs = {'state': self.state_trigger,
-#                               'time': self.time_trigger,
-#                               }
-#         self.log = Logger(log_id)
-#
-#     def set_controls(self, controller=None):
-#         self.controls = controller
-#         if controller is not None:
-#             self.name = controller.name
-#             self.restart = controller.restart
-#             self.trigger_var = controller.trigger_var
-#
-#     async def register(self, trigger):
-#         await self.trigger_funcs[trigger.type](trigger)
-#
-#     async def state_trigger(self, trigger):
-#         trigger_strings = []
-#
-#         for name in trigger.entities:
-#             string = []
-#             if trigger.new is not None:
-#                 string.append(f"{name} == '{trigger.new}'")
-#
-#             if trigger.old is not None:
-#                 string.append(f"{name}.old == '{trigger.old}'")
-#
-#             if len(string) == 0:
-#                 string.append(f"{name}")
-#
-#             trigger_strings.append(" and ".join(string))
-#             await self.log.info(f"state: {self.name}: {string} {self.actions}")
-#
-#     async def time_trigger(self, trigger):
-#         days = trigger.days
-#         times = trigger.times
-#         offset = trigger.offset_seconds
-#
-#         prod = product(days, times)
-#         triggers = [f"once({x[0]} {x[1]} + {offset}s)" for x in prod]
-#         for t in triggers:
-#             await self.log.info(f"time: {self.name} {t} {self.actions}")
-#
-#     async def set_state(self,
-#                         entity_name,
-#                         value=None,
-#                         new_attributes=None,
-#                         kwargs=None):
-#
-#         await self.log.info(f"state.set(entity_name={entity_name},"
-#                             + f" value={value},"
-#                             + f" new_attributes={new_attributes},"
-#                             + f" kwargs = **{kwargs})")
-#
-#         return state.set(entity_name, value, new_attributes, kwargs)
-#
-#     async def get_state(self, entity_name):
-#         await self.log.info(f"Getting State of {entity_name}")
-#         return state.get(entity_name)
-#
-#     async def call_service(self, domain, service_name, **kwargs):
-#         message = f"service.call({domain}, {service_name}, **{kwargs}))"
-#         await self.log.debug(message)
-#         return service.call(domain, service_name, **kwargs)
-#
-#     async def sleep(self, seconds):
-#         await self.log.info(f"task.sleep({seconds}))")
-#         return task.sleep(seconds)

@@ -1,4 +1,5 @@
 from pyparsing import ParseResults, CaselessKeyword
+from .interpreters import TestInterpreter, PrintLogger
 
 
 class VarHandler:
@@ -22,10 +23,22 @@ class VarHandler:
 
 
 class OttoContext:
-    def __init__(self, var_handler, interpreter, logger):
-        self.vars = var_handler
-        self.log = logger
-        self.interpreter = interpreter
+    def __init__(self, var_handler=None, interpreter=None, logger=None):
+
+        if var_handler is None:
+            self.vars = VarHandler()
+        else:
+            self.vars = var_handler
+
+        if logger is None:
+            self.log = PrintLogger('none')
+        else:
+            self.log = logger
+
+        if interpreter is None:
+            self.interpreter = TestInterpreter(logger=self.log)
+        else:
+            self.interpreter = interpreter
 
 
 class OttoBase:
@@ -60,7 +73,7 @@ class OttoBase:
         return dictionary
 
     async def eval(self, interpreter):
-        return self.value
+        return self._value
 
     @classmethod
     def pre_parse(cls, *args, **kwargs):
@@ -76,6 +89,6 @@ class OttoBase:
     @classmethod
     def set_context(cls, context=None):
         if context is None:
-            cls.ctx = OttoContext(VarHandler())
+            cls.ctx = OttoContext()
         else:
             cls.ctx = context

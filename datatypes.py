@@ -20,7 +20,7 @@ ident = ident.set_parse_action(lambda x: x[0])
 
 
 class Var(OttoBase):
-    parser = Group(Word("@", alphanums+'_')("name")
+    parser = Group(Word("@", alphanums + '_')("name")
                    + Optional(":" + common.identifier)("attribute"))
 
     @classmethod
@@ -33,13 +33,14 @@ class Var(OttoBase):
 
 
 class String(OttoBase):
-    parser = Group(QuotedString(quote_char="'", unquoteResults=True)("value")
-                   | QuotedString(quote_char='"', unquoteResults=True)("value")
+    parser = Group(QuotedString(quote_char="'", unquoteResults=True)("_value")
+                   | QuotedString(quote_char='"',
+                                  unquoteResults=True)("_value")
                    )
 
 
-class Numeric(OttoBase):
-    parser = Group(common.number("value"))
+class Number(OttoBase):
+    parser = Group(common.number("_value"))
 
 
 class Entity(OttoBase):
@@ -58,8 +59,9 @@ class Entity(OttoBase):
         return name
 
     async def eval(self, interpreter):
-        self.value = await interpreter.get_state(self.name)
-        return self.value
+        self._value = await interpreter.get_state(self.name)
+        print(self._value)
+        return self._value
 
 
 class Area(OttoBase):
@@ -72,7 +74,7 @@ class List(OttoBase):
     def pre_parse(cls, content_parser=None, *args, **kwargs):
 
         if content_parser is None:
-            content_parser = (String() ^ Numeric() ^ Entity() ^ Var())
+            content_parser = (String() ^ Number() ^ Entity() ^ Var())
         else:
             content_parser = Var() ^ content_parser
 
@@ -86,7 +88,7 @@ class List(OttoBase):
 
 class Dict(OttoBase):
     _allowedvalues = Or([String(),
-                         Numeric(),
+                         Number(),
                          Entity(),
                          Var()
                          ])
@@ -133,10 +135,52 @@ class Target(OttoBase):
         return {'entity_id': entities, 'area_id': areas}
 
 
+class Input(OttoBase):
+
+    def __init__(self, tokens, result_type):
+        super().__init__(tokens)
+        self.result_type = result_type
+
+    async def eval(self, interpreter):
+        result = await self.input.eval(interpreter)
+
+        if self.result_type == 'numeric':
+            try:
+                result = float(result)
+                return result
+            except ValueError as error:
+                print(error)
+        else:
+            return result
+
+    @classmethod
+    def pre_parse(cls, result_type, *args, **kwargs):
+        if result_type == "numeric":
+            parser = Group(Number()("input")
+                           | Entity()("input")
+                           | Var()("input")
+                           )
+        elif result_type == "text":
+            parser = Group(String()("input")
+                           | Entity()("input")
+                           | Var()("input")
+                           )
+        elif result_type == "any":
+            parser = Group(Number()("input")
+                           | String()("input")
+                           | Entity()("input")
+                           | Var()("input")
+                           )
+
+        parser.set_name(cls.__name__)
+        parser.set_parse_action(lambda x: cls(x, result_type, *args, **kwargs))
+        return parser
+
+
 # class Single(OttoBase):
 #     parser = Group((Var()
 #                    ^ Entity()
-#                    ^ Numeric()
+#                    ^ Number()
 #                    ^ String()
 #                     )("inputs")
 #                    )
@@ -145,7 +189,7 @@ class Target(OttoBase):
 #     def pre_parse(cls, parser=None, *args, **kwargs):
 #
 #         if parser is None:
-#             parser = (String() ^ Numeric() ^ Entity() ^ Var())
+#             parser = (String() ^ Number() ^ Entity() ^ Var())
 #         else:
 #             parser = Var() ^ parser
 #

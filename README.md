@@ -123,11 +123,11 @@ In addition to the base class and primitives, the `vocab` module defines smaller
 
 ```
 class RelativeTime(BaseVocab):
-    _parser = Numeric.parser()("_count") + (Hour.parser() | Minute.parser() | Second.parser())("_unit")
+    _parser = Number.parser()("_count") + (Hour.parser() | Minute.parser() | Second.parser())("_unit")
 
     @property
     def seconds(self):
-        return self._count.value * self._unit.seconds
+        return self._count._value * self._unit.seconds
 ```
 
 ### Adding a Command

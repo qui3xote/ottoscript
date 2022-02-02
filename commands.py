@@ -1,6 +1,6 @@
 from pyparsing import CaselessKeyword, Optional, MatchFirst, Group, Literal
 from .ottobase import OttoBase
-from .datatypes import (Numeric,
+from .datatypes import (Number,
                         Entity,
                         String,
                         List,
@@ -8,7 +8,8 @@ from .datatypes import (Numeric,
                         ident,
                         Dict,
                         Var,
-                        Target)
+                        Target,
+                        Input)
 from .keywords import WITH, ON, TO, OFF, AREA
 from .time import RelativeTime, TimeStamp
 
@@ -33,32 +34,32 @@ class Assignment(OttoBase):
                    + (Var()
                       ^ Entity()
                       ^ Dict()
-                      ^ Numeric()
+                      ^ Number()
                       ^ String()
                       ^ (AREA + List(Area()))
                       ^ List()
-                      )("value")
+                      )("_value")
                    )
 
     def __init__(self, tokens, namespace='internal'):
         super().__init__(tokens)
         if namespace == 'internal':
-            self.ctx.vars.update({self.var.name: self.value[0]})
+            self.ctx.vars.update({self.var.name: self._value[0]})
         elif namespace == 'external':
-            self.ctx.vars.update_global({self.var.name: self.value[0]})
+            self.ctx.vars.update_global({self.var.name: self._value[0]})
 
 
 class With(OttoBase):
-    parser = Group(WITH + Dict()("value"))
+    parser = Group(WITH + Dict()("_value"))
 
     async def eval(self, interpreter):
-        return await self.value.eval(interpreter)
+        return await self._value.eval(interpreter)
 
 
 class Command(OttoBase):
 
     async def eval(self, interpreter):
-        kwargs = {}
+        kwargs = self.kwargs
 
         if hasattr(self, 'targets'):
             targets = await self.targets.eval(interpreter)
@@ -75,6 +76,20 @@ class Command(OttoBase):
                                                 self.service_name,
                                                 **kwargs)
         return result
+
+    @property
+    def kwargs(self):
+        if hasattr(self, '_kwargs'):
+            return self._kwargs
+        else:
+            return {}
+
+    @kwargs.setter
+    def kwargs(self, value: dict):
+        if hasattr(self, '_kwargs'):
+            self._kwargs.update(value)
+        else:
+            self._kwargs = value
 
     @classmethod
     def parsers(cls):
@@ -95,7 +110,7 @@ class Set(Command):
                    + (Var()("new_value")
                       ^ Entity()("new_value")
                       ^ String()("new_value")
-                      ^ Numeric()("new_value"))
+                      ^ Number()("new_value"))
                    )
 
     async def eval(self, interpreter):
@@ -143,34 +158,37 @@ class Dim(Command):
     parser = Group(DIM
                    + Target()("targets")
                    + (CaselessKeyword("TO") | CaselessKeyword("BY"))("type")
-                   + (Numeric()("number")
-                      | Var()("number")
-                      | Entity()("number"))
+                   + Input("numeric")("number")
                    + Optional('%')("use_pct")
                    )
 
     @property
-    def with_data(self):
-        if self._type.upper() == 'TO':
+    def param(self):
+        if self.type.upper() == 'TO':
             param = 'brightness'
         else:
             param = 'brightness_step'
 
-        if hasattr(self, '_use_pct'):
+        if hasattr(self, 'use_pct'):
             param += '_pct'
 
-        return {param: self.number.value}
-
-    @property
-    def service_name(self):
-        if self.number.value > 0 or hasattr(self, '_use_pct'):
-            return "turn_on"
-        else:
-            return "turn_off"
+        return param
 
     @property
     def domain(self):
         return "light"
+
+    async def eval(self, interpreter):
+
+        number = await self.number.eval(interpreter)
+
+        if number > 0 or hasattr(self, '_use_pct'):
+            self.service_name = "turn_on"
+        else:
+            self.service_name = "turn_off"
+
+        self.kwargs = {self.param: number}
+        return await super().eval(interpreter)
 
 
 class Lock(Command):
@@ -223,7 +241,7 @@ class Disarm(Command):
 class OpenClose(Command):
     parser = Group((OPEN | CLOSE)("type")
                    + Target()("targets")
-                   + Optional(TO + (Numeric()("position")
+                   + Optional(TO + (Number()("position")
                                     | Var()("position")
                                     | Entity()("position")))
                    )
@@ -231,7 +249,7 @@ class OpenClose(Command):
     @property
     def static_data(self):
         if hasattr(self, "position"):
-            position = self.position.value
+            position = self.position._value
         else:
             position = 100
 

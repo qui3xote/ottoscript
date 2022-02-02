@@ -5,7 +5,7 @@ from pyparsing import (CaselessKeyword,
                        )
 from .ottobase import OttoBase
 from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
-from .datatypes import Entity, Numeric, List, String
+from .datatypes import Entity, Number, List, String
 from .time import RelativeTime, TimeStamp, DayOfWeek
 
 
@@ -35,13 +35,13 @@ class StateTrigger(OttoBase):
 
 
 class StateChange(StateTrigger):
-    term = (Entity() | Numeric() | String())
+    term = (Entity() | Number() | String())
     parser = Group(List(Entity())("entities")
                    + CaselessKeyword("CHANGES")
                    + Optional(FROM + (Entity()("_old")
-                                      | Numeric()("_old") | String()("_old")))
+                                      | Number()("_old") | String()("_old")))
                    + Optional(TO + (Entity()("_new")
-                                    | Numeric()("_new") | String()("_new")))
+                                    | Number()("_new") | String()("_new")))
                    + Optional(FOR + (TimeStamp()("_hold")
                                      | RelativeTime()("_hold")))
                    )
@@ -56,14 +56,14 @@ class StateChange(StateTrigger):
     @ property
     def old(self):
         if hasattr(self, "_old"):
-            return self._old.value
+            return self._old._value
         else:
             return None
 
     @ property
     def new(self):
         if hasattr(self, "_new"):
-            return self._new.value
+            return self._new._value
         else:
             return None
 

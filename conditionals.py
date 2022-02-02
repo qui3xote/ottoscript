@@ -1,7 +1,7 @@
 import operator as op
 from pyparsing import (Group, Or, OneOrMore, opAssoc,
                        infixNotation, Forward, Optional, MatchFirst)
-from .datatypes import String, Numeric, Var, Entity
+from .datatypes import String, Number, Var, Entity
 from .ottobase import OttoBase
 from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END
 from .commands import Command, Assignment
@@ -19,7 +19,7 @@ class Comparison(OttoBase):
     }
 
     term = (String()
-            | Numeric()
+            | Number()
             | Entity()
             | Var()
             )

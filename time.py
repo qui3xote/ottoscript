@@ -8,7 +8,7 @@ from pyparsing import (CaselessKeyword,
                        common)
 from .ottobase import OttoBase
 from .keywords import HOUR, MINUTE, SECOND
-from .datatypes import Numeric,  Var
+from .datatypes import Number,  Var
 
 MONDAY = Or(map(CaselessKeyword, "MONDAY MON".split()))
 TUESDAY = Or(map(CaselessKeyword, "TUESDAY TUE".split()))
@@ -101,7 +101,7 @@ class TimeStamp(TimePart):
 
 
 class RelativeTime(TimePart):
-    parser = Group(Numeric()("count")
+    parser = Group(Number()("count")
                    + (Hour()("unit")
                    | Minute()("unit")
                    | Second()("unit"))
@@ -109,11 +109,11 @@ class RelativeTime(TimePart):
 
     @property
     def seconds(self):
-        return self.count.value * self.unit.seconds
+        return self.count._value * self.unit.seconds
 
     @property
     def string(self):
-        return f"{str(self.count.value)} {self.unit.string}"
+        return f"{str(self.count._value)} {self.unit.string}"
 
 
 class Date(TimePart):
