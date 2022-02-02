@@ -22,8 +22,10 @@ class VarHandler:
 
 
 class OttoContext:
-    def __init__(self, var_handler):
+    def __init__(self, var_handler, interpreter, logger):
         self.vars = var_handler
+        self.log = logger
+        self.interpreter = interpreter
 
 
 class OttoBase:

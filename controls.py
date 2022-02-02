@@ -1,5 +1,5 @@
 from pyparsing import (Group, Optional, MatchFirst,
-                       Suppress, OneOrMore)
+                       Suppress, ZeroOrMore, OneOrMore)
 from .keywords import AUTOMATION, RESTART, WHEN
 from .ottobase import OttoBase
 from .datatypes import ident, Var
@@ -11,7 +11,7 @@ from .triggers import StateTrigger, TimeTrigger
 class AutoControls(OttoBase):
     parser = Group(AUTOMATION
                    + ident("name")
-                   + Optional(Var()('_trigger_var'))
+                   + Optional(Var(fetch=False)('_trigger_var'))
                    + Optional(RESTART('restart_option'))
                    )
 
@@ -36,14 +36,18 @@ class Actions(OttoBase):
             await clause.eval(interpreter)
 
 
-class Auto(OttoBase):
-    trigger = Suppress(WHEN) \
-        + MatchFirst(StateTrigger.parsers() + TimeTrigger.parsers())
-
-    parser = Group(AutoControls()("controls")
-                   + OneOrMore(trigger)("triggers")
-                   + Group(Actions())('actions'))
-
-
 class GlobalParser(OttoBase):
-    parser = Group(OneOrMore(Assignment("external"))("assignments"))
+    parser = Group(ZeroOrMore(Assignment("external"))("assignments"))
+
+
+class Trigger(OttoBase):
+    parser = Group(Suppress(WHEN)
+                   + MatchFirst(StateTrigger.parsers() + TimeTrigger.parsers())
+                   )
+
+
+class Auto(OttoBase):
+    parser = Group(GlobalParser()("globals")
+                   + AutoControls()("controls")
+                   + OneOrMore(Trigger())("triggers")
+                   + Actions()("actions"))
