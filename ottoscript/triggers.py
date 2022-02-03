@@ -11,21 +11,24 @@ from .time import RelativeTime, TimeStamp, DayOfWeek
 
 class StateTrigger(OttoBase):
 
+    @property
     def strings(self):
         strings = []
+        try:
+            for e in self.entities.contents:
+                string = []
+                if self.new is not None:
+                    string.append(f"{e.name} == '{self.new}'")
 
-        for e in self.entities.contents:
-            string = []
-            if self.new is not None:
-                string.append(f"{e.name} == '{self.new}'")
+                if self.old is not None:
+                    string.append(f"{e.name}.old == '{self.old}'")
 
-            if self.old is not None:
-                string.append(f"{e.name}.old == '{self.old}'")
+                if len(string) == 0:
+                    string.append(f"{e.name}")
 
-            if len(string) == 0:
-                string.append(f"{e.name}")
-
-            strings.append(" and ".join(string))
+                strings.append(" and ".join(string))
+        except Exception as error:
+            self.ctx.log.error(f"Unable to parse state trigger {error}")
 
         return strings
 
@@ -53,37 +56,38 @@ class StateChange(StateTrigger):
         else:
             return None
 
-    @ property
+    @property
     def old(self):
         if hasattr(self, "_old"):
             return self._old._value
         else:
             return None
 
-    @ property
+    @property
     def new(self):
         if hasattr(self, "_new"):
             return self._new._value
         else:
             return None
 
-    @ property
+    @property
     def type(self):
         return 'state'
 
 
 class TimeTrigger(OttoBase):
 
+    @property
     def strings(self):
         prod = product(self.days, self.times)
         strings = [f"once({x[0]} {x[1]} + {self.offset}s)" for x in prod]
         return strings
 
-    @ property
+    @property
     def type(self):
         return 'time'
 
-    @ property
+    @property
     def days(self):
         if not hasattr(self, "_days"):
             return ['']
@@ -94,7 +98,7 @@ class TimeTrigger(OttoBase):
 
             return result
 
-    @ classmethod
+    @classmethod
     def parsers(cls):
         return [subclass() for subclass in cls.__subclasses__()]
 
@@ -109,7 +113,7 @@ class WeeklySchedule(TimeTrigger):
 
         self.times = [x.string for x in self._times.contents]
 
-    @ property
+    @property
     def offset(self):
         return 0
 
@@ -124,7 +128,7 @@ class SunEvent(TimeTrigger):
                    + Optional(ON + List(DayOfWeek())("_days"))
                    )
 
-    @ property
+    @property
     def offset(self):
         if not hasattr(self, "_offset"):
             return 0
@@ -132,6 +136,6 @@ class SunEvent(TimeTrigger):
             sign = 1 if self._offset[1] == "AFTER" else -1
             return sign * self._offset[0].seconds
 
-    @ property
+    @property
     def times(self):
         return [self._time.lower()]

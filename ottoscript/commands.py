@@ -29,17 +29,18 @@ OPEN = CaselessKeyword("OPEN")
 
 
 class Assignment(OttoBase):
-    parser = Group(Var(fetch=False)("var")
-                   + Literal('=')
-                   + (Var()
-                      ^ Entity()
-                      ^ Dict()
-                      ^ Number()
-                      ^ String()
-                      ^ (AREA + List(Area()))
-                      ^ List()
-                      )("_value")
-                   )
+    parser = Group(
+        Var(fetch=False)("var")
+        + Literal('=')
+        + (Var()
+           | Entity()
+           | Dict()
+           | Number()
+           | String()
+           | (AREA + List(Area()))
+           | List()
+           )("_value")
+    )
 
     def __init__(self, tokens, namespace='internal'):
         super().__init__(tokens)
@@ -104,14 +105,15 @@ class Pass(Command):
 
 
 class Set(Command):
-    parser = Group(SET
-                   + List(Entity())("targets")
-                   + (TO | "=")
-                   + (Var()("new_value")
-                      ^ Entity()("new_value")
-                      ^ String()("new_value")
-                      ^ Number()("new_value"))
-                   )
+    parser = Group(
+        SET
+        + List(Entity())("targets")
+        + (TO | "=")
+        + (Var()("new_value")
+           ^ Entity()("new_value")
+           ^ String()("new_value")
+           ^ Number()("new_value"))
+    )
 
     async def eval(self, interpreter):
         callfunc = interpreter.set_state
@@ -133,10 +135,14 @@ class Wait(Command):
 
 
 class Turn(Command):
-    parser = Group(TURN + (ON ^ OFF)('command')
-                   + ident("domain")
-                   + Target()("targets")
-                   + Optional(With()("with_data")))
+    parser = Group(
+        TURN + (ON ^ OFF)('command')
+        + ident("domain")
+        + Target()("targets")
+        + Optional(
+            With()("with_data")
+        )
+    )
 
     @property
     def service_name(self):
@@ -144,10 +150,11 @@ class Turn(Command):
 
 
 class Toggle(Command):
-    parser = Group(TOGGLE
-                   + ident("domain")
-                   + Target()("targets")
-                   )
+    parser = Group(
+        TOGGLE
+        + ident("domain")
+        + Target()("targets")
+    )
 
     @property
     def service_name(self):
@@ -155,12 +162,13 @@ class Toggle(Command):
 
 
 class Dim(Command):
-    parser = Group(DIM
-                   + Target()("targets")
-                   + (CaselessKeyword("TO") | CaselessKeyword("BY"))("type")
-                   + Input("numeric")("number")
-                   + Optional('%')("use_pct")
-                   )
+    parser = Group(
+        DIM
+        + Target()("targets")
+        + (CaselessKeyword("TO") | CaselessKeyword("BY"))("type")
+        + Input("numeric")("number")
+        + Optional('%')("use_pct")
+    )
 
     @property
     def param(self):
@@ -192,10 +200,13 @@ class Dim(Command):
 
 
 class Lock(Command):
-    parser = Group((LOCK ^ UNLOCK)("type")
-                   + Target()("targets")
-                   + Optional(With()("with_data"))
-                   )
+    parser = Group(
+        (LOCK ^ UNLOCK)("type")
+        + Target()("targets")
+        + Optional(
+            With()("with_data")
+        )
+    )
 
     @property
     def service_name(self):
@@ -208,11 +219,14 @@ class Lock(Command):
 
 class Arm(Command):
     _states = map(CaselessKeyword, "HOME AWAY NIGHT VACATION".split(" "))
-    parser = Group(ARM
-                   + MatchFirst(_states)("type")
-                   + Target()("targets")
-                   + Optional(With()("with_data"))
-                   )
+    parser = Group(
+        ARM
+        + MatchFirst(_states)("type")
+        + Target()("targets")
+        + Optional(
+            With()("with_data")
+        )
+    )
 
     @property
     def service_name(self):
@@ -224,10 +238,13 @@ class Arm(Command):
 
 
 class Disarm(Command):
-    parser = Group(DISARM
-                   + Target()("targets")
-                   + Optional(With()("with_data"))
-                   )
+    parser = Group(
+        DISARM
+        + Target()("targets")
+        + Optional(
+            With()("with_data")
+        )
+    )
 
     @property
     def service_name(self):
@@ -239,12 +256,16 @@ class Disarm(Command):
 
 
 class OpenClose(Command):
-    parser = Group((OPEN | CLOSE)("type")
-                   + Target()("targets")
-                   + Optional(TO + (Number()("position")
-                                    | Var()("position")
-                                    | Entity()("position")))
-                   )
+    parser = Group(
+        (OPEN | CLOSE)("type")
+        + Target()("targets")
+        + Optional(
+            TO + (
+                Number()("position")
+                | Var()("position")
+                | Entity()("position"))
+        )
+    )
 
     @property
     def static_data(self):
@@ -269,11 +290,16 @@ class OpenClose(Command):
 
 
 class Call(Command):
-    parser = Group(CALL
-                   + Entity()("service")
-                   + Optional(ON + Target()("targets"))
-                   + Optional(With()("with_data"))
-                   )
+    parser = Group(
+        CALL
+        + Entity()("service")
+        + Optional(
+            ON + Target()("targets")
+        )
+        + Optional(
+            With()("with_data")
+        )
+    )
 
     @property
     def domain(self):

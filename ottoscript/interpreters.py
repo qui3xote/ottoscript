@@ -1,24 +1,30 @@
 
+registry = {}
+
 class PrintLogger:
 
-    def __init__(self, log_id='test', debug_as_info=False):
+    def __init__(self, log_id='test', task=None, debug_as_info=False):
         self.log_id = log_id
         self.debug_as_info = debug_as_info
+        self.task = task
+
+    def set_task(self, task):
+        self.task = task
 
     async def info(self, message):
-        print(f'INFO: {self.log_id} {message}')
+        print(f'INFO: {self.log_id} {self.task} {message}')
 
     async def error(self, message):
-        print(f'Error: {self.log_id} {message}')
+        print(f'ERROR: {self.log_id} {self.task} {message}')
 
     async def warning(self, message):
-        print(f'Warning: {self.log_id} {message}')
+        print(f'WARNING: {self.log_id}  {self.task} {message}')
 
     async def debug(self, message):
         if self.debug_as_info:
-            print(f'DEBUG: {self.log_id} {message}')
+            print(f'DEBUG: {self.log_id}  {self.task} {message}')
         else:
-            print(f'DEBUG: {self.log_id} {message}')
+            print(f'DEBUG: {self.log_id}  {self.task} {message}')
 
 
 class Service:
@@ -31,10 +37,12 @@ class Service:
 class State:
 
     def set(self, entity_name, value=None, new_attributes=None, kwargs=None):
-        return {'entity_name': entity_name,
-                'value': value,
-                'new_attributes': new_attributes,
-                'kwargs': kwargs}
+        return {
+            'entity_name': entity_name,
+            'value': value,
+            'new_attributes': new_attributes,
+            'kwargs': kwargs
+        }
 
     def get(self, entity_name):
         if len(entity_name.split('.')) == 2:
@@ -56,11 +64,18 @@ task = Task()
 
 class Registrar:
     """Register functions and hold runtime vars"""
+
     def __init__(self, logger):
         self.log = logger
+        self.log.set_task('registrar')
 
-    def add(self, ottofunc):
-        pass
+    async def add(self, ottofunc):
+        for trigger in ottofunc.triggers:
+            for subtrigger in trigger.trigger_list:
+                await self.log.info(subtrigger)
+
+
+
     # async def state_trigger(self, trigger):
     #     trigger_strings = []
     #

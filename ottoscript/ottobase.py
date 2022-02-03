@@ -40,6 +40,9 @@ class OttoContext:
         else:
             self.interpreter = interpreter
 
+    def set_name(self, name):
+        self.log.set_task(name)
+
 
 class OttoBase:
 
