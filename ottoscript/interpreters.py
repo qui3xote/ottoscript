@@ -1,5 +1,6 @@
 
-registry = {}
+pyscript_registry = {}
+
 
 class PrintLogger:
 
@@ -68,13 +69,81 @@ class Registrar:
     def __init__(self, logger):
         self.log = logger
         self.log.set_task('registrar')
+        self.registry = {}
 
-    async def add(self, ottofunc):
-        for trigger in ottofunc.triggers:
-            for subtrigger in trigger.trigger_list:
-                await self.log.info(subtrigger)
+    async def add(self, controls, triggers, actions):
+        namespace = controls.ctx.log.log_id
+        name = controls.name
+        key = (namespace, name)
+
+        if namespace not in self.registry.keys():
+            self.registry[namespace] = {}
+
+        self.registry[namespace].update(
+            {
+                name:
+                {
+                    'actions': actions,
+                    'controls': controls,
+                    'triggers': triggers
+                }
+            }
+        )
+
+        if key not in pyscript_registry:
+            pyscript_registry.update({key: []})
+
+        for trigger in triggers.as_list():
+            await self.log.info(trigger)
+
+            if trigger['type'] == 'state':
+                func = state_trigger_factory(
+                    self,
+                    key,
+                    controls,
+                    trigger['string'],
+                    trigger['hold']
+                )
+
+            elif trigger['type'] == 'time':
+                func = time_trigger_factory(
+                    self,
+                    key,
+                    controls,
+                    trigger['string']
+                )
+
+            pyscript_registry[key].append(func)
+
+    async def eval(self, key, kwargs):
+        actions = self.registry[key[0]][key[1]]['actions']
+        actions.ctx.vars.update(kwargs)
+        await actions.eval(actions.ctx.interpreter)
 
 
+def state_trigger_factory(registrar, key, controls, string, hold):
+
+    # self.log.debug(f"Registering {key} with trigger '{string}'")
+
+    # @task_unique(controls.name, kill_me=controls.restart)
+    # @state_trigger(string, state_hold=hold)
+    async def otto_state_func(**kwargs):
+        nonlocal registrar, key
+        await registrar.eval(key, kwargs)
+
+    return otto_state_func
+
+
+def time_trigger_factory(registrar, key, controls, string):
+    # self.log_debug(f"Registering {self.name} with trigger '{string}'")
+
+    # @task_unique(self.name, kill_me=self.restart)
+    # @time_trigger(string)
+    async def otto_time_func(**kwargs):
+        nonlocal registrar, key
+        await registrar.eval(key, kwargs)
+
+    return otto_time_func
 
     # async def state_trigger(self, trigger):
     #     trigger_strings = []

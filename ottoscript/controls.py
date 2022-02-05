@@ -56,21 +56,22 @@ class GlobalParser(OttoBase):
     )
 
 
-class Trigger(OttoBase):
+class Triggers(OttoBase):
     parser = Group(
-        Suppress(WHEN)
-        + MatchFirst(
-            StateTrigger.parsers()
-            + TimeTrigger.parsers()
+        OneOrMore(
+            Suppress(WHEN)
+            + MatchFirst(
+                StateTrigger.parsers()
+                + TimeTrigger.parsers()
+            )
         )("_trigger_list")
     )
 
-    @property
-    def trigger_list(self):
+    def as_list(self):
         return [
-            {"type": trigger.type, 'string': string}
-            for trigger in self._trigger_list
-            for string in trigger.strings
+            trigger
+            for triggers in self._trigger_list
+            for trigger in triggers.as_list()
         ]
 
 
@@ -78,8 +79,6 @@ class Auto(OttoBase):
     parser = Group(
         GlobalParser()("globals")
         + AutoControls()("controls")
-        + OneOrMore(
-            Trigger()
-        )("triggers")
+        + Triggers()("triggers")
         + Actions()("actions")
     )

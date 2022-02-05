@@ -32,6 +32,13 @@ class StateTrigger(OttoBase):
 
         return strings
 
+    def as_dict(self):
+        return {
+            'type': self.type,
+            'strings': self.strings,
+            'hold': self.hold_seconds
+        }
+
     @classmethod
     def parsers(cls):
         return [subclass() for subclass in cls.__subclasses__()]
@@ -51,10 +58,10 @@ class StateChange(StateTrigger):
 
     @property
     def hold_seconds(self):
-        if hasattr(self, 'hold'):
-            return self.hold.seconds
+        if hasattr(self, '_hold'):
+            return self._hold.seconds
         else:
-            return None
+            return 0
 
     @property
     def old(self):
@@ -73,6 +80,16 @@ class StateChange(StateTrigger):
     @property
     def type(self):
         return 'state'
+
+    def as_list(self):
+        return [
+            {
+                'type': self.type,
+                'string': string,
+                'hold': self.hold_seconds
+            }
+            for string in self.strings
+        ]
 
 
 class TimeTrigger(OttoBase):
@@ -97,6 +114,12 @@ class TimeTrigger(OttoBase):
                 result.extend(parser.days)
 
             return result
+
+    def as_list(self):
+        return [
+            {'type': self.type, 'string': string}
+            for string in self.strings
+        ]
 
     @classmethod
     def parsers(cls):
