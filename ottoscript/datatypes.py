@@ -129,9 +129,24 @@ class Target(OttoBase):
                 if type(x) == Entity:
                     entities.append(x.name)
                 if type(x) == Area:
-                    areas.append(x.name)
+                    expanded = self.expand_areas(x.name)
+                    areas.extend(expanded)
 
         return {'entity_id': entities, 'area_id': areas}
+
+    def expand_areas(self, name):
+        area_shortcuts = self.ctx.get_var('area_shortcuts')
+        if area_shortcuts is None:
+            return [name]
+
+        if name not in area_shortcuts.keys():
+            return [name]
+
+        areas = []
+        for new in area_shortcuts[name]:
+            areas.extend(self.expand_areas(new))
+
+        return areas
 
 
 class Input(OttoBase):
