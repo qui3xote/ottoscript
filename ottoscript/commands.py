@@ -42,40 +42,41 @@ class Assignment(OttoBase):
            )("_value")
     )
 
-    def __init__(self, tokens, namespace='internal'):
+    def __init__(self, tokens, namespace='local'):
         super().__init__(tokens)
-        if namespace == 'internal':
-            self.ctx.vars.update({self.var.name: self._value[0]})
-        elif namespace == 'external':
-            self.ctx.vars.update_global({self.var.name: self._value[0]})
+
+        if namespace == 'local':
+            self.ctx.update_vars({self.var.name: self._value[0]})
+        elif namespace == 'global':
+            self.ctx.update_global_vars({self.var.name: self._value[0]})
 
 
 class With(OttoBase):
     parser = Group(WITH + Dict()("_value"))
 
-    async def eval(self, interpreter):
-        return await self._value.eval(interpreter)
+    async def eval(self):
+        return await self._value.eval()
 
 
 class Command(OttoBase):
 
-    async def eval(self, interpreter):
+    async def eval(self):
         kwargs = self.kwargs
 
         if hasattr(self, 'targets'):
-            targets = await self.targets.eval(interpreter)
+            targets = await self.targets.eval()
             kwargs.update(targets)
 
         if hasattr(self, "with_data"):
-            data = await self.with_data.eval(interpreter)
+            data = await self.with_data.eval()
             kwargs.update(data)
 
         if hasattr(self, "static_data"):
             kwargs.update(self.static_data)
 
-        result = await interpreter.call_service(self.domain,
-                                                self.service_name,
-                                                **kwargs)
+        result = await self.ctx.interpreter.call_service(self.domain,
+                                                         self.service_name,
+                                                         **kwargs)
         return result
 
     @property
@@ -100,8 +101,8 @@ class Command(OttoBase):
 class Pass(Command):
     parser = Group(PASS('pass'))
 
-    async def eval(self, interpreter):
-        await interpreter.log.info("Passing")
+    async def eval(self):
+        await self.ctx.interpreter.log.info("Passing")
 
 
 class Set(Command):
@@ -115,9 +116,9 @@ class Set(Command):
            ^ Number()("new_value"))
     )
 
-    async def eval(self, interpreter):
-        callfunc = interpreter.set_state
-        value = await self.new_value.eval(interpreter)
+    async def eval(self):
+        callfunc = self.ctx.interpreter.set_state
+        value = await self.new_value.eval()
 
         results = []
         for e in self.targets.contents:
@@ -129,8 +130,8 @@ class Set(Command):
 class Wait(Command):
     parser = Group(WAIT + (TimeStamp()("time") | RelativeTime()("time")))
 
-    async def eval(self, interpreter):
-        result = await interpreter.sleep(self.time.seconds)
+    async def eval(self):
+        result = await self.ctx.interpreter.sleep(self.time.seconds)
         return result
 
 
@@ -186,9 +187,9 @@ class Dim(Command):
     def domain(self):
         return "light"
 
-    async def eval(self, interpreter):
+    async def eval(self):
 
-        number = await self.number.eval(interpreter)
+        number = await self.number.eval()
 
         if number > 0 or hasattr(self, '_use_pct'):
             self.service_name = "turn_on"
@@ -196,7 +197,7 @@ class Dim(Command):
             self.service_name = "turn_off"
 
         self.kwargs = {self.param: number}
-        return await super().eval(interpreter)
+        return await super().eval()
 
 
 class Lock(Command):
@@ -275,7 +276,6 @@ class OpenClose(Command):
             position = 100
 
         if self.type.lower() == 'close':
-            print('closing')
             position = 100 - position
 
         return {'position': position}
@@ -295,7 +295,7 @@ class Call(Command):
         + Entity()("service")
         + Optional(
             ON + Target()("targets")
-            )
+        )
         + Optional(
             With()("with_data")
         )

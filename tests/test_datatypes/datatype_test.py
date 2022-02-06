@@ -1,6 +1,6 @@
 import pytest
 from collections import Counter
-from ottoscript.ottobase import OttoBase, VarHandler, OttoContext
+from ottoscript.ottobase import OttoBase, OttoContext
 from ottoscript.datatypes import (Number,
                                   String,
                                   Var,
@@ -10,16 +10,14 @@ from ottoscript.datatypes import (Number,
                                   Target,
                                   Area,
                                   Input)
-from ottoscript.interpreters import TestInterpreter
 
 
 @pytest.mark.asyncio
 async def test_numeric():
     """Verify we correctly parse a number"""
 
-    interpreter = TestInterpreter()
     n = Number().parse_string("15")[0]
-    output = await n.eval(interpreter)
+    output = await n.eval()
     assert output == 15
 
 
@@ -27,22 +25,28 @@ async def test_numeric():
 async def test_string():
     """Verify we correctly parse a string"""
 
-    interpreter = TestInterpreter()
     n = String().parse_string("'foo'")[0]
-    output = await n.eval(interpreter)
+    output = await n.eval()
     assert output == 'foo'
 
 
 @pytest.mark.asyncio
-async def test_var():
+async def test_var_no_fetch():
     """Verify we correctly parse a var"""
 
-    vh = VarHandler()
-    vh.update({'@foo': 'foostring'})
-    OttoBase.set_context(vh)
     n = Var(fetch=False).parse_string("@foo")[0]
-
     assert n.name == '@foo'
+
+
+@pytest.mark.asyncio
+async def test_var_with_fetch():
+    """Verify we correctly parse a var"""
+
+    ctx = OttoContext()
+    ctx.update_vars({'@foo': 'foostring'})
+    OttoBase.set_context(ctx)
+    n = Var(fetch=True).parse_string("@foo")[0]
+    assert n == 'foostring'
 
 
 @pytest.mark.asyncio
@@ -52,21 +56,19 @@ async def test_entity():
                  ('ship.crew:uniform', 'ship.crew.uniform', 1)
                  ]
 
-    interpreter = TestInterpreter()
     for test in test_list:
         n = Entity().parse_string(test[0])[0]
         assert n.name == test[1]
-        assert await n.eval(interpreter) == test[2]
+        assert await n.eval() == test[2]
 
 
 @pytest.mark.asyncio
 async def test_list():
     """Verify we correctly parse a list"""
 
-    vh = VarHandler()
-    vh.update({'@foo': 'foostring'})
-    context = OttoContext(vh)
-    OttoBase.set_context(context)
+    ctx = OttoContext()
+    ctx.update_vars({'@foo': 'foostring'})
+    OttoBase.set_context(ctx)
 
     string = "'test1', 27, ship.crew, @foo"
     expected = [String().parse_string('"test1"')[0],
@@ -100,10 +102,9 @@ async def test_list_single():
 async def test_dictionary():
     """Verify we correctly parse a dictionary"""
 
-    vh = VarHandler()
-    vh.update({'@foo': 'foostring'})
-    context = OttoContext(vh)
-    OttoBase.set_context(context)
+    ctx = OttoContext()
+    ctx.update_vars({'@foo': 'foostring'})
+    OttoBase.set_context(ctx)
 
     string = "(first = 1, second = 'foo', third = ship.crew, fourth = @foo)"
     expected = {'first': Number,
@@ -120,18 +121,15 @@ async def test_dictionary():
 
 @pytest.mark.asyncio
 async def test_target():
-    interpreter = TestInterpreter()
 
-    vh = VarHandler()
+    ctx = OttoContext()
     area = Area().parse_string('kitchen')[0]
-    vh.update({'@area': area})
+    ctx.update_vars({'@area': area})
 
     arealist = List(Area()).parse_string('kitchen, living_room')[0]
-    vh.update({'@arealist': arealist})
+    ctx.update_vars({'@arealist': arealist})
 
-    context = OttoContext(vh)
-
-    OttoBase.set_context(context)
+    OttoBase.set_context(ctx)
 
     tests = [('ship.crew, ship.phasers',
               {'entity_id': ['ship.crew', 'ship.phasers'], 'area_id': []}
@@ -152,21 +150,18 @@ async def test_target():
 
     for test in tests:
         n = Target().parse_string(test[0])[0]
-        result = await n.eval(interpreter)
+        result = await n.eval()
         assert result == test[1]
 
 
 @pytest.mark.asyncio
 async def test_input():
-    interpreter = TestInterpreter()
 
-    vh = VarHandler()
-    vh.update({'@foostring': String().parse_string("'foostring'")[0],
-               '@foonumber': Number().parse_string("30.0")[0]})
+    ctx = OttoContext()
+    ctx.update_vars({'@foostring': String().parse_string("'foostring'")[0],
+                     '@foonumber': Number().parse_string("30.0")[0]})
 
-    context = OttoContext(vh)
-
-    OttoBase.set_context(context)
+    OttoBase.set_context(ctx)
 
     tests = [{"type": "text",
               "string": "'foostring'",
@@ -218,5 +213,5 @@ async def test_input():
     for test in tests:
         n = Input(test["type"]).parse_string(test["string"])[0]
         print(test["string"])
-        result = await n.eval(interpreter)
+        result = await n.eval()
         assert result == test["expected"]

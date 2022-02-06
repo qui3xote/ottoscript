@@ -33,7 +33,6 @@ class AutoControls(OttoBase):
 
     def __init__(self, tokens):
         super().__init__(tokens)
-        print(f"setting name to {self.name}")
         self.ctx.set_name(self.name)
 
 
@@ -43,15 +42,15 @@ class Actions(OttoBase):
         OneOrMore(conditionals | Then())("clauses")
     )
 
-    async def eval(self, interpreter):
+    async def eval(self):
         for clause in self.clauses:
-            await clause.eval(interpreter)
+            await clause.eval()
 
 
 class GlobalParser(OttoBase):
     parser = Group(
         ZeroOrMore(
-            Assignment("external")
+            Assignment("global")
         )("assignments")
     )
 

@@ -117,8 +117,8 @@ class Registrar:
 
     async def eval(self, key, kwargs):
         actions = self.registry[key[0]][key[1]]['actions']
-        actions.ctx.vars.update(kwargs)
-        await actions.eval(actions.ctx.interpreter)
+        # actions.ctx.update_vars(kwargs)
+        await actions.eval()
 
 
 def state_trigger_factory(registrar, key, controls, string, hold):

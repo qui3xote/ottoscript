@@ -1,8 +1,6 @@
 import pytest
-from ottoscript.ottobase import OttoBase, VarHandler
-from ottoscript.commands import Assignment
+from ottoscript.ottobase import OttoBase
 from ottoscript.controls import GlobalParser
-# from ottoscript.interpreters import TestInterpreter
 
 
 @pytest.mark.asyncio
@@ -11,6 +9,6 @@ async def test_globalparser():
 
     OttoBase.set_context()
     n = GlobalParser().parse_string("@foo = 'foostring'")[0]
-    assert n.ctx.vars.external.get("@foo")._value == 'foostring'
-    assert n.ctx.vars.internal.get("@foo") is None
-    assert n.ctx.vars.get("@foo")._value == 'foostring'
+    assert n.ctx.global_vars.get("@foo")._value == 'foostring'
+    assert n.ctx.local_vars.get("@foo") is None
+    assert n.ctx.get_var("@foo")._value == 'foostring'

@@ -1,6 +1,13 @@
 import pytest
 from collections import Counter
-from ottoscript.conditionals import Comparison, Then, If, IfThen, IfThenElse, Case
+from ottoscript.conditionals import (
+    Comparison,
+    Then,
+    If,
+    IfThen,
+    IfThenElse,
+    Case
+)
 from ottoscript.interpreters import TestInterpreter
 
 interpreter = TestInterpreter()
@@ -17,7 +24,7 @@ async def test_comparison():
 
     for s in strings:
         n = Comparison().parse_string(s[0])[0]
-        assert await n.eval(interpreter) == s[1]
+        assert await n.eval() == s[1]
 
 
 @pytest.mark.asyncio
@@ -32,15 +39,17 @@ async def test_then():
 
     expected = [[{'domain': 'alarm_control_panel',
                  'service_name': 'alarm_arm_home',
-                  'kwargs': {'entity_id': ['alarm_control_panel.honeywell'],
-                             'area_id': [],
-                             }
+                  'kwargs': {
+                      'entity_id': ['alarm_control_panel.honeywell'],
+                      'area_id': [],
+                  }
                   }],
                 [{'domain': 'alarm_control_panel',
                             'service_name': 'alarm_arm_home',
-                            'kwargs': {'entity_id': ['alarm_control_panel.honeywell'],
-                                       'area_id': [],
-                                       }
+                            'kwargs': {
+                                'entity_id': ['alarm_control_panel.honeywell'],
+                                'area_id': [],
+                            }
                   },
                  {'domain': 'alarm_control_panel',
                   'service_name': 'alarm_disarm',
@@ -53,7 +62,7 @@ async def test_then():
 
     for n, s in enumerate(strings):
         t = Then().parse_string(s)[0]
-        results = await t.eval(interpreter)
+        results = await t.eval()
         for num, result in enumerate(results):
             assert result == expected[n][num]
 
@@ -69,7 +78,7 @@ async def test_if():
 
     for t in tests:
         n = If().parse_string(t[0])[0]
-        assert await n.eval(interpreter) == t[1]
+        assert await n.eval() == t[1]
 
 
 @pytest.mark.asyncio
@@ -83,12 +92,12 @@ async def test_ifthen():
 
     for t in tests:
         n = IfThen().parse_string(t[0])[0]
-        x = await n.eval(interpreter)
+        x = await n.eval()
         assert Counter(x) == Counter(t[1])
 
     false_string = "IF 'foobar' < 'foo' WAIT 30 SECONDS END"
     n = IfThen().parse_string(false_string)[0]
-    assert await n.eval(interpreter) is False
+    assert await n.eval() is False
 
 
 @pytest.mark.asyncio
@@ -110,7 +119,7 @@ async def test_ifthenelse():
 
     for t in tests:
         n = IfThenElse().parse_string(t[0])[0]
-        x = await n.eval(interpreter)
+        x = await n.eval()
         if type(t[1]) == list:
             assert Counter(x) == Counter(t[1])
         else:
@@ -160,5 +169,5 @@ async def test_case():
 
     for t in tests:
         n = Case().parse_string(t[0])[0]
-        x = await n.eval(interpreter)
+        x = await n.eval()
         assert x == t[1]

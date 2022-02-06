@@ -23,12 +23,10 @@ class VarHandler:
 
 
 class OttoContext:
-    def __init__(self, var_handler=None, interpreter=None, logger=None):
+    def __init__(self, interpreter=None, logger=None):
 
-        if var_handler is None:
-            self.vars = VarHandler()
-        else:
-            self.vars = var_handler
+        self.local_vars = {}
+        self.global_vars = {}
 
         if logger is None:
             self.log = PrintLogger('none')
@@ -43,6 +41,20 @@ class OttoContext:
     def set_name(self, name):
         self.log.set_task(name)
 
+    def get_var(self, key):
+        local = self.local_vars.get(key)
+
+        if local is None:
+            return self.global_vars.get(key)
+        else:
+            return local
+
+    def update_vars(self, dictionary):
+        self.local_vars.update(dictionary)
+
+    def update_global_vars(self, dictionary):
+        self.global_vars.update(dictionary)
+
 
 class OttoBase:
 
@@ -54,7 +66,10 @@ class OttoBase:
 
     def __init__(self, tokens, *args, **kwargs):
         super().__init__(*[], **{})
+
+        self.ctx = type(self).ctx
         self.tokens = tokens[0]
+
         try:
             for k, v in self.tokens.as_dict().items():
                 setattr(self, k, v)
@@ -75,7 +90,7 @@ class OttoBase:
                 dictionary[k] = v.debugtree(levels=levels - 1)
         return dictionary
 
-    async def eval(self, interpreter):
+    async def eval(self):
         return self._value
 
     @classmethod

@@ -27,7 +27,7 @@ class Var(OttoBase):
     def post_parse(cls, tokens, fetch=True, *args, **kwargs):
         if fetch is True:
             parse_dict = tokens[0].as_dict()
-            return cls.ctx.vars.get(parse_dict['name'])
+            return cls.ctx.get_var(parse_dict['name'])
         else:
             return cls(tokens, *args, **kwargs)
 
@@ -58,9 +58,8 @@ class Entity(OttoBase):
             name = ".".join([name, self.attribute])
         return name
 
-    async def eval(self, interpreter):
-        self._value = await interpreter.get_state(self.name)
-        print(self._value)
+    async def eval(self):
+        self._value = await self.ctx.interpreter.get_state(self.name)
         return self._value
 
 
@@ -101,13 +100,13 @@ class Dict(OttoBase):
                    + Optional(Suppress(":") + ident)("attribute")
                    )
 
-    async def eval(self, interpreter):
+    async def eval(self):
         if hasattr(self, "attribute"):
-            result = await self.contents.get(self.attribute).eval(interpreter)
+            result = await self.contents.get(self.attribute).eval()
         else:
             result = {}
             for k, v in self.contents.items():
-                result[k] = await v.eval(interpreter)
+                result[k] = await v.eval()
         return result
 
 
@@ -116,7 +115,7 @@ class Target(OttoBase):
                    ^ (AREA + List(Area() ^ Var())("inputs"))
                    )
 
-    async def eval(self, interpreter):
+    async def eval(self):
         entities = []
         areas = []
 
@@ -141,15 +140,15 @@ class Input(OttoBase):
         super().__init__(tokens)
         self.result_type = result_type
 
-    async def eval(self, interpreter):
-        result = await self.input.eval(interpreter)
+    async def eval(self):
+        result = await self.input.eval()
 
         if self.result_type == 'numeric':
             try:
                 result = float(result)
                 return result
             except ValueError as error:
-                print(error)
+                self.ctx.log.error(error)
         else:
             return result
 

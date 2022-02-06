@@ -26,10 +26,10 @@ async def test_assign_local_vars():
 
     n = Assignment().parse_string("@foo = 'foostring'")[0]
 
-    assert type(n.ctx.vars.get('@foo')) == String
-    assert n.ctx.vars.get('@foo')._value == 'foostring'
-    assert n.ctx.vars.internal.get('@foo')._value == 'foostring'
-    assert n.ctx.vars.external.get('@foo') is None
+    assert type(n.ctx.get_var('@foo')) == String
+    assert n.ctx.get_var('@foo')._value == 'foostring'
+    assert n.ctx.local_vars.get('@foo')._value == 'foostring'
+    assert n.ctx.global_vars.get('@foo') is None
 
 
 @pytest.mark.asyncio
@@ -37,19 +37,19 @@ async def test_assign_global_vars():
     """Verify we correctly assign global vars"""
 
     OttoBase.set_context()
-    n = Assignment("external").parse_string("@foo = 'foostring'")[0]
+    n = Assignment("global").parse_string("@foo = 'foostring'")[0]
 
-    assert type(n.ctx.vars.get('@foo')) == String
-    assert n.ctx.vars.get('@foo')._value == 'foostring'
-    assert n.ctx.vars.internal.get('@foo') is None
-    assert n.ctx.vars.external.get('@foo')._value == 'foostring'
+    assert type(n.ctx.get_var('@foo')) == String
+    assert n.ctx.get_var('@foo')._value == 'foostring'
+    assert n.ctx.local_vars.get('@foo') is None
+    assert n.ctx.global_vars.get('@foo')._value == 'foostring'
 
 
 @pytest.mark.asyncio
 async def test_pass():
 
     n = Pass().parse_string('pass')[0]
-    assert await n.eval(interpreter) is None
+    assert await n.eval() is None
 
 
 @pytest.mark.asyncio
@@ -61,7 +61,7 @@ async def test_set():
                  'new_attributes': None,
                  'kwargs': None}]
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -73,7 +73,7 @@ async def test_turn():
                 'kwargs': {'entity_id': ['light.cupola_lights'],
                            'area_id': []}}
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -85,7 +85,7 @@ async def test_toggle():
                 'kwargs': {'entity_id': [],
                            'area_id': ['cupola']}}
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -119,10 +119,10 @@ async def test_dim():
                             'area_id': ['cupola'],
                             'brightness_step': 50}}
 
-    assert await n1.eval(interpreter) == expected1
-    assert await n2.eval(interpreter) == expected2
-    assert await n3.eval(interpreter) == expected3
-    assert await n4.eval(interpreter) == expected4
+    assert await n1.eval() == expected1
+    assert await n2.eval() == expected2
+    assert await n3.eval() == expected3
+    assert await n4.eval() == expected4
 
 
 @pytest.mark.asyncio
@@ -137,7 +137,7 @@ async def test_lock():
                            }
                 }
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -151,7 +151,7 @@ async def test_arm():
                            }
                 }
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -165,7 +165,7 @@ async def test_disarm():
                            }
                 }
 
-    assert await n.eval(interpreter) == expected
+    assert await n.eval() == expected
 
 
 @pytest.mark.asyncio
@@ -189,8 +189,8 @@ async def test_openclose():
                               }
                    }
 
-    assert await n1.eval(interpreter) == n1_expected
-    assert await n2.eval(interpreter) == n2_expected
+    assert await n1.eval() == n1_expected
+    assert await n2.eval() == n2_expected
 
 
 @pytest.mark.asyncio
@@ -222,9 +222,9 @@ async def test_call():
                               }
                    }
 
-    assert await n1.eval(interpreter) == n1_expected
-    assert await n2.eval(interpreter) == n2_expected
-    assert await n3.eval(interpreter) == n3_expected
+    assert await n1.eval() == n1_expected
+    assert await n2.eval() == n2_expected
+    assert await n3.eval() == n3_expected
 
 
 @pytest.mark.asyncio
@@ -239,6 +239,6 @@ async def test_wait():
     n3 = Wait().parse_string("WAIT 00:45")[0]
     expected3 = 45 * 60
 
-    assert await n1.eval(interpreter) == expected1
-    assert await n2.eval(interpreter) == expected2
-    assert await n3.eval(interpreter) == expected3
+    assert await n1.eval() == expected1
+    assert await n2.eval() == expected2
+    assert await n3.eval() == expected3
