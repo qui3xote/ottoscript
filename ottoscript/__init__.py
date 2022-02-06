@@ -1,1 +1,1 @@
-from . import *
+from .controls import Auto
