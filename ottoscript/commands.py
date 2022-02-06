@@ -295,7 +295,7 @@ class Call(Command):
         + Entity()("service")
         + Optional(
             ON + Target()("targets")
-        )
+            )
         + Optional(
             With()("with_data")
         )
