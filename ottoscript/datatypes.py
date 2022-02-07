@@ -69,26 +69,41 @@ class Entity(OttoBase):
     parser = Group(ident("domain")
                    + Literal(".")
                    + ident("id")
-                   + Optional(":" + common.identifier("attribute"))
+                   + Optional(":" + common.identifier("_attribute"))
                    )
 
     def __str__(self):
         return "".join([str(x) for x in self.tokens])
 
     @property
+    def attribute(self):
+        if hasattr(self, "_attribute"):
+            return self._attribute
+        else:
+            return None
+
+    @property
     def name(self):
         name = ".".join([self.domain, self.id])
 
-        if hasattr(self, "attribute"):
+        if self.attribute is not None:
             name = ".".join([name, self.attribute])
+
         return name
 
     async def eval(self, attribute=None):
         name = self.name
 
+        if attribute is None:
+            attribute = self.attribute
+
         if attribute is not None:
             if attribute == 'name':
-                return name
+                return ".".join([self.domain, self.id])
+            if attribute == 'id':
+                return self.id
+            if attribute == 'domain':
+                return self.domain
             else:
                 name = ".".join([self.domain, self.id, attribute])
 
