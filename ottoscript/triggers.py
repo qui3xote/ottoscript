@@ -5,7 +5,7 @@ from pyparsing import (CaselessKeyword,
                        )
 from .ottobase import OttoBase
 from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
-from .datatypes import Entity, Number, List, String
+from .datatypes import Entity, Number, List, String, Var
 from .time import RelativeTime, TimeStamp, DayOfWeek
 
 
