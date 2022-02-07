@@ -8,9 +8,9 @@ from ottoscript.conditionals import (
     IfThenElse,
     Case
 )
-from ottoscript.interpreters import TestInterpreter
+from ottoscript.interpreters import Interpreter
 
-interpreter = TestInterpreter()
+interpreter = Interpreter()
 
 
 @pytest.mark.asyncio

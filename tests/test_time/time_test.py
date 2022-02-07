@@ -1,8 +1,8 @@
 import pytest
 from ottoscript.time import TimeStamp, RelativeTime, Date, DateTime
-from ottoscript.interpreters import TestInterpreter
+from ottoscript.interpreters import Interpreter
 
-interpreter = TestInterpreter()
+interpreter = Interpreter()
 
 
 @pytest.mark.asyncio

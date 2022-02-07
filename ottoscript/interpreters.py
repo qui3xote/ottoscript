@@ -174,7 +174,7 @@ def time_trigger_factory(registrar, key, controls, string):
     #         await self.log.debug(f"time: {self.name} {t} {self.actions}")
 
 
-class TestInterpreter:
+class Interpreter:
     """Convert ottoscript commands to pyscript commands"""
 
     def __init__(self, logger=None):

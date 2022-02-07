@@ -1,9 +1,9 @@
 import pytest
 from collections import Counter
 from ottoscript.triggers import StateChange, WeeklySchedule, SunEvent
-from ottoscript.interpreters import TestInterpreter
+from ottoscript.interpreters import Interpreter
 
-interpreter = TestInterpreter()
+interpreter = Interpreter()
 
 
 @pytest.mark.asyncio

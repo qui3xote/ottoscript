@@ -14,9 +14,9 @@ from ottoscript.commands import (Assignment,
                                  Call,
                                  Wait
                                  )
-from ottoscript.interpreters import TestInterpreter
+from ottoscript.interpreters import Interpreter
 
-interpreter = TestInterpreter()
+interpreter = Interpreter()
 OttoBase.set_context()
 
 

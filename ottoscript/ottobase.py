@@ -1,5 +1,5 @@
 from pyparsing import ParseResults, CaselessKeyword
-from .interpreters import TestInterpreter, PrintLogger
+from .interpreters import Interpreter, PrintLogger
 
 
 class VarHandler:
@@ -34,7 +34,7 @@ class OttoContext:
             self.log = logger
 
         if interpreter is None:
-            self.interpreter = TestInterpreter(logger=self.log)
+            self.interpreter = Interpreter(logger=self.log)
         else:
             self.interpreter = interpreter
 
