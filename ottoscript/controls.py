@@ -54,6 +54,10 @@ class GlobalParser(OttoBase):
         )("assignments")
     )
 
+    def exec(self):
+        for a in self.assignments:
+            a.exec()
+
 
 class Triggers(OttoBase):
     parser = Group(
@@ -81,3 +85,7 @@ class Auto(OttoBase):
         + Triggers()("triggers")
         + Actions()("actions")
     )
+
+    def __init__(self, tokens):
+        super().__init__(tokens)
+        globals.exec()
