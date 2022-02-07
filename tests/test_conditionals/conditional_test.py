@@ -9,6 +9,8 @@ from ottoscript.conditionals import (
     Case
 )
 from ottoscript.interpreters import Interpreter
+from ottoscript.ottobase import OttoContext, OttoBase
+from ottoscript.datatypes import String
 
 interpreter = Interpreter()
 
@@ -20,7 +22,17 @@ async def test_comparison():
     strings = [("light.cupola_lights == 'light.cupola_lights'", True),
                ("light.cupola_lights != 'light.office_lights'", True),
                ("15 >= 10", True),
-               ("'foobar' > 'foo'", True)]
+               ("'foobar' > 'foo'", True),
+               ("@foo == 'bar'", True)]
+
+    ctx = OttoContext()
+    ctx.update_vars(
+        {
+            "@foo": String().parse_string("'bar'")[0]
+        }
+    )
+
+    OttoBase.set_context(ctx)
 
     for s in strings:
         n = Comparison().parse_string(s[0])[0]
