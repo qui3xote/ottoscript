@@ -20,16 +20,35 @@ ident = ident.set_parse_action(lambda x: x[0])
 
 
 class Var(OttoBase):
-    parser = Group(Word("@", alphanums + '_')("name")
-                   + Optional(":" + common.identifier)("attribute"))
+    parser = Group(
+        Word("@", alphanums + '_')("name")
+        + Optional(":" + common.identifier("attribute"))
+    )
 
     @classmethod
-    def post_parse(cls, tokens, fetch=True, *args, **kwargs):
+    def post_parse(cls, tokens, fetch=False, *args, **kwargs):
         if fetch is True:
             parse_dict = tokens[0].as_dict()
             return cls.ctx.get_var(parse_dict['name'])
         else:
             return cls(tokens, *args, **kwargs)
+
+    def fetch(self):
+        return self.ctx.get_var(self.name)
+
+    async def eval(self):
+        value = self.fetch()
+
+        if hasattr(value, 'eval'):
+            if hasattr(self, 'attribute'):
+                return await value.eval(attribute=self.attribute)
+            else:
+                return await value.eval()
+        else:
+            if hasattr(self, 'attribute'):
+                return value.get(self.attribute)
+            else:
+                return value
 
 
 class String(OttoBase):
@@ -58,9 +77,16 @@ class Entity(OttoBase):
             name = ".".join([name, self.attribute])
         return name
 
-    async def eval(self):
-        self._value = await self.ctx.interpreter.get_state(self.name)
-        return self._value
+    async def eval(self, attribute=None):
+        name = self.name
+
+        if attribute is not None:
+            if attribute == 'name':
+                return name
+            else:
+                name = ".".join([self.domain, self.id, attribute])
+
+        return await self.ctx.interpreter.get_state(name)
 
 
 class Area(OttoBase):
@@ -97,11 +123,13 @@ class Dict(OttoBase):
     parser = Group(Literal("(")
                    + _dict("contents")
                    + Literal(")")
-                   + Optional(Suppress(":") + ident)("attribute")
+                   + Optional(Suppress(":") + ident("attribute"))
                    )
 
-    async def eval(self):
-        if hasattr(self, "attribute"):
+    async def eval(self, attribute=None):
+        if attribute is not None:
+            result = await self.contents.get(attribute).eval()
+        elif hasattr(self, "attribute"):
             result = await self.contents.get(self.attribute).eval()
         else:
             result = {}
@@ -120,6 +148,8 @@ class Target(OttoBase):
         areas = []
 
         for i in self.inputs.contents:
+            if type(i) == Var:
+                i = i.fetch()
 
             if type(i) == List:
                 i = i.contents
@@ -189,22 +219,3 @@ class Input(OttoBase):
         parser.set_name(cls.__name__)
         parser.set_parse_action(lambda x: cls(x, result_type, *args, **kwargs))
         return parser
-
-
-# class Single(OttoBase):
-#     parser = Group((Var()
-#                    ^ Entity()
-#                    ^ Number()
-#                    ^ String()
-#                     )("inputs")
-#                    )
-#
-#     @classmethod
-#     def pre_parse(cls, parser=None, *args, **kwargs):
-#
-#         if parser is None:
-#             parser = (String() ^ Number() ^ Entity() ^ Var())
-#         else:
-#             parser = Var() ^ parser
-#
-#         return parser.set_parse_action(lambda x: cls(x, *args, **kwargs))

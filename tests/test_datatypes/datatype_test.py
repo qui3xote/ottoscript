@@ -39,14 +39,31 @@ async def test_var_no_fetch():
 
 
 @pytest.mark.asyncio
-async def test_var_with_fetch():
-    """Verify we correctly parse a var"""
+async def test_var_with_attributes():
+    """Verify we correctly parse a var with attributes"""
 
     ctx = OttoContext()
-    ctx.update_vars({'@foo': 'foostring'})
+    d_string = "(one=1, two=2)"
+    e_string = "ship.crew"
+    ctx.update_vars({'@foo_entity': Entity().parse_string(e_string)[0]})
+    ctx.update_vars({'@foo_dict': Dict().parse_string(d_string)[0]})
     OttoBase.set_context(ctx)
-    n = Var(fetch=True).parse_string("@foo")[0]
-    assert n == 'foostring'
+
+    n = Var().parse_string("@foo_entity:name")[0]
+    r = await n.eval()
+    assert r == "ship.crew"
+
+    n = Var().parse_string("@foo_entity:number")[0]
+    r = await n.eval()
+    assert r == 1
+
+    n = Var().parse_string("@foo_dict:one")[0]
+    r = await n.eval()
+    assert r == 1
+
+    n = Var().parse_string("@foo_dict:two")[0]
+    r = await n.eval()
+    assert r == 2
 
 
 @pytest.mark.asyncio
@@ -107,15 +124,14 @@ async def test_dictionary():
     OttoBase.set_context(ctx)
 
     string = "(first = 1, second = 'foo', third = ship.crew, fourth = @foo)"
-    expected = {'first': Number,
-                'second': String,
-                "third": Entity,
-                "fourth": str}
+    expected = {'first': 1,
+                'second': 'foo',
+                "third": 'ship.crew',
+                "fourth": 'foostring'}
 
     n1 = Dict().parse_string(string)[0]
 
-    result = {k: type(v) for k, v in n1.contents.items()}
-
+    result = await n1.eval()
     assert result == expected
 
 

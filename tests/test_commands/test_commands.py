@@ -25,7 +25,7 @@ async def test_assign_local_vars():
     """Verify we correctly assign vars"""
 
     n = Assignment().parse_string("@foo = 'foostring'")[0]
-
+    await n.eval()
     assert type(n.ctx.get_var('@foo')) == String
     assert n.ctx.get_var('@foo')._value == 'foostring'
     assert n.ctx.local_vars.get('@foo')._value == 'foostring'
@@ -39,6 +39,7 @@ async def test_assign_global_vars():
     OttoBase.set_context()
     n = Assignment("global").parse_string("@foo = 'foostring'")[0]
 
+    await n.eval()
     assert type(n.ctx.get_var('@foo')) == String
     assert n.ctx.get_var('@foo')._value == 'foostring'
     assert n.ctx.local_vars.get('@foo') is None

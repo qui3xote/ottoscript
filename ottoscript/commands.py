@@ -44,10 +44,15 @@ class Assignment(OttoBase):
 
     def __init__(self, tokens, namespace='local'):
         super().__init__(tokens)
+        self.namespace = namespace
 
-        if namespace == 'local':
+    async def eval(self):
+        self.exec()
+
+    def exec(self):
+        if self.namespace == 'local':
             self.ctx.update_vars({self.var.name: self._value[0]})
-        elif namespace == 'global':
+        elif self.namespace == 'global':
             self.ctx.update_global_vars({self.var.name: self._value[0]})
 
 
