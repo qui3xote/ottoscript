@@ -127,6 +127,8 @@ class Set(Command):
 
         results = []
         for e in self.targets.contents:
+            if type(e) == Var:
+                e = e.fetch()
             results.append(await callfunc(e.name, value=value))
 
         return results
