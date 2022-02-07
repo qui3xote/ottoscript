@@ -54,7 +54,8 @@ class GlobalParser(OttoBase):
         )("assignments")
     )
 
-    def exec(self):
+    def __init__(self, tokens):
+        super().__init__(tokens)
         for a in self.assignments:
             a.exec()
 
@@ -85,7 +86,3 @@ class Auto(OttoBase):
         + Triggers()("triggers")
         + Actions()("actions")
     )
-
-    def __init__(self, tokens):
-        super().__init__(tokens)
-        globals.exec()

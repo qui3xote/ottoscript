@@ -40,8 +40,8 @@ class Comparison(OttoBase):
         right = await self.right.eval()
         result = self.opfunc(left, right)
 
-        msg = f"Condition {result}: {self.opfunc.__name__}"
-        msg += f" {str(self.right)} {self.operand} {self.left}"
+        msg = f"Comparison {result}:"
+        msg += f" {str(self)}"
         msg += f" evaluated to ({right} {self.operand} {left})"
         await self.ctx.interpreter.log.debug(msg)
         return result
@@ -62,7 +62,7 @@ class Then(Conditional):
     async def eval(self):
         results = []
         for command in self.commands:
-            await self.ctx.interpreter.log.debug(f"THEN {command}")
+            await self.ctx.interpreter.log.info(f"Executing {str(command)}")
             result = await command.eval()
             results.append(result)
         return results
@@ -92,13 +92,22 @@ class If(Conditional):
 
         self._eval_tree = self.build_evaluator_tree(conditions)
 
+    def __str__(self):
+        if type(self.conditions) == list:
+            return " ".join(['IF'] + [str(x) for x in self.conditions])
+        else:
+            return " ".join([str(x) for x in self.tokens])
+
     async def eval(self):
-        await self.ctx.interpreter.log.debug('In ifclause eval')
         result = await self.eval_tree(self._eval_tree)
+        await self.ctx.interpreter.log.info(
+            f"'{str(self)}' is {result}. "
+            + f"{'Executing' if result else 'Skipping'}"
+            + " commands."
+        )
         return result
 
     async def eval_tree(self, tree):
-        await self.ctx.interpreter.log.debug('In ifclause eval_tree')
         statements = []
         strings = []
 
@@ -111,8 +120,6 @@ class If(Conditional):
                 strings.append(f"\n{item}: {result}")
 
         result = tree['opfunc'](statements)
-        await self.ctx.interpreter.log.info(
-            f"If clause result: {result}: {strings}")
 
         return result
 

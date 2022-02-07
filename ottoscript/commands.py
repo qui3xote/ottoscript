@@ -107,7 +107,7 @@ class Pass(Command):
     parser = Group(PASS('pass'))
 
     async def eval(self):
-        await self.ctx.interpreter.log.info("Passing")
+        await self.ctx.interpreter.log.debug("Passing")
 
 
 class Set(Command):

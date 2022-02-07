@@ -78,6 +78,9 @@ class OttoBase:
             print(tokens)
             print(error)
 
+    def __str__(self):
+        return " ".join([str(x) for x in self.tokens])
+
     def debugtree(self, levels=5):
         if levels == 0:
             return {'type': type(self), 'string': 'Level Limit Reached'}

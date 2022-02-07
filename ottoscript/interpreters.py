@@ -24,8 +24,6 @@ class PrintLogger:
     async def debug(self, message):
         if self.debug_as_info:
             print(f'DEBUG: {self.log_id}  {self.task} {message}')
-        else:
-            print(f'DEBUG: {self.log_id}  {self.task} {message}')
 
 
 class Service:
@@ -94,7 +92,7 @@ class Registrar:
             pyscript_registry.update({key: []})
 
         for trigger in triggers.as_list():
-            await self.log.info(trigger)
+            await self.log.debug(trigger)
 
             if trigger['type'] == 'state':
                 func = state_trigger_factory(
@@ -116,8 +114,10 @@ class Registrar:
             pyscript_registry[key].append(func)
 
     async def eval(self, key, kwargs):
+        controls = self.registry[key[0]][key[1]]['controls']
         actions = self.registry[key[0]][key[1]]['actions']
-        # actions.ctx.update_vars(kwargs)
+        await self.log.info(f"Running {controls.name}")
+        actions.ctx.update_vars(kwargs)
         await actions.eval()
 
 
@@ -192,12 +192,12 @@ class TestInterpreter:
         message += f" new_attributes={new_attributes},"
         message += f" kwargs = **{kwargs})"
 
-        await self.log.info(message)
+        await self.log.debug(message)
 
         return state.set(entity_name, value, new_attributes, kwargs)
 
     async def get_state(self, entity_name):
-        await self.log.info(f"Getting State of {entity_name}")
+        await self.log.debug(f"Getting State of {entity_name}")
         return state.get(entity_name)
 
     async def call_service(self, domain, service_name, **kwargs):
@@ -206,5 +206,5 @@ class TestInterpreter:
         return service.call(domain, service_name, **kwargs)
 
     async def sleep(self, seconds):
-        await self.log.info(f"task.sleep({seconds}))")
+        await self.log.debug(f"task.sleep({seconds}))")
         return task.sleep(seconds)

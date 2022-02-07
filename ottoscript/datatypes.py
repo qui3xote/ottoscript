@@ -25,13 +25,8 @@ class Var(OttoBase):
         + Optional(":" + common.identifier("attribute"))
     )
 
-    @classmethod
-    def post_parse(cls, tokens, fetch=False, *args, **kwargs):
-        if fetch is True:
-            parse_dict = tokens[0].as_dict()
-            return cls.ctx.get_var(parse_dict['name'])
-        else:
-            return cls(tokens, *args, **kwargs)
+    def __str__(self):
+        return " ".join([str(x) for x in self.tokens])
 
     def fetch(self):
         return self.ctx.get_var(self.name)
@@ -49,6 +44,14 @@ class Var(OttoBase):
                 return value.get(self.attribute)
             else:
                 return value
+
+    @classmethod
+    def post_parse(cls, tokens, fetch=False, *args, **kwargs):
+        if fetch is True:
+            parse_dict = tokens[0].as_dict()
+            return cls.ctx.get_var(parse_dict['name'])
+        else:
+            return cls(tokens, *args, **kwargs)
 
 
 class String(OttoBase):
@@ -68,6 +71,9 @@ class Entity(OttoBase):
                    + ident("id")
                    + Optional(":" + common.identifier("attribute"))
                    )
+
+    def __str__(self):
+        return "".join([str(x) for x in self.tokens])
 
     @property
     def name(self):
@@ -94,6 +100,9 @@ class Area(OttoBase):
 
 
 class List(OttoBase):
+
+    def __str__(self):
+        return "".join([str(x) for x in self.tokens])
 
     @classmethod
     def pre_parse(cls, content_parser=None, *args, **kwargs):
