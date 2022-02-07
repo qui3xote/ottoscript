@@ -112,6 +112,8 @@ class If(Conditional):
         strings = []
 
         for item in tree['items']:
+            if type(item) == Var:
+                item = item.fetch()
             if type(item) == dict:
                 statements.append(await self.eval_tree(item))
             if type(item) == Comparison:
