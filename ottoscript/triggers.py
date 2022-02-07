@@ -16,6 +16,9 @@ class StateTrigger(OttoBase):
         strings = []
         try:
             for e in self.entities.contents:
+                if type(e) == Var:
+                    e = e.fetch()
+
                 string = []
                 if self.new is not None:
                     string.append(f"{e.name} == '{self.new}'")
