@@ -180,6 +180,8 @@ class Target(OttoBase):
             else:
                 i = [i]
             for x in i:
+                if type(x) == Var:
+                    x = x.fetch()
                 if type(x) == Entity:
                     entities.append(x.name)
                 if type(x) == Area:
@@ -210,7 +212,12 @@ class Input(OttoBase):
         self.result_type = result_type
 
     async def eval(self):
-        result = await self.input.eval()
+        if type(self.input) == Var:
+            input = self.input.fetch()
+        else:
+            input = self.input
+
+        result = await input.eval()
 
         if self.result_type == 'numeric':
             try:
