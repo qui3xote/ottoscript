@@ -109,7 +109,7 @@ class Entity(OttoBase):
         else:
             name = self.name
 
-        await self.log.info(f"fetching state of {name}")
+        await self.ctx.log.info(f"fetching state of {name}")
         return await self.ctx.interpreter.get_state(name)
 
 
