@@ -106,7 +106,10 @@ class Entity(OttoBase):
                 return self.domain
             else:
                 name = ".".join([self.domain, self.id, attribute])
+        else:
+            name = self.name
 
+        await self.log.info(f"fetching state of {name}")
         return await self.ctx.interpreter.get_state(name)
 
 

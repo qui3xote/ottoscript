@@ -42,8 +42,8 @@ class Comparison(OttoBase):
 
         msg = f"Comparison {result}:"
         msg += f" {str(self)}"
-        msg += f" evaluated to ({right} {self.operand} {left})"
-        await self.ctx.interpreter.log.debug(msg)
+        msg += f" evaluated to ({left} {self.operand} {right})"
+        await self.ctx.interpreter.log.info(msg)
         return result
 
 
@@ -112,8 +112,7 @@ class If(Conditional):
         strings = []
 
         for item in tree['items']:
-            if type(item) == Var:
-                item = item.fetch()
+
             if type(item) == dict:
                 statements.append(await self.eval_tree(item))
             if type(item) == Comparison:
