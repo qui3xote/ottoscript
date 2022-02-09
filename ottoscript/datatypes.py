@@ -1,3 +1,4 @@
+from copy import copy
 from pyparsing import (
     Group,
     QuotedString,
@@ -29,7 +30,17 @@ class Var(OttoBase):
         return " ".join([str(x) for x in self.tokens])
 
     def fetch(self):
-        return self.ctx.get_var(self.name)
+        value = self.ctx.get_var(self.name)
+
+        #
+        # Return a copy of entities with attribute matching
+        # the var request.
+        #
+        if type(value) == Entity and hasattr(self, 'attribute'):
+            value = value.copy()
+            value.attribute = self.attribute
+
+        return value
 
     async def eval(self):
         value = self.fetch()
@@ -44,14 +55,6 @@ class Var(OttoBase):
                 return value.get(self.attribute)
             else:
                 return value
-
-    @classmethod
-    def post_parse(cls, tokens, fetch=False, *args, **kwargs):
-        if fetch is True:
-            parse_dict = tokens[0].as_dict()
-            return cls.ctx.get_var(parse_dict['name'])
-        else:
-            return cls(tokens, *args, **kwargs)
 
 
 class String(OttoBase):
@@ -81,6 +84,10 @@ class Entity(OttoBase):
             return self._attribute
         else:
             return None
+
+    @attribute.setter
+    def attribute(self, attr_name):
+        self._attribute = attr_name
 
     @property
     def name(self):

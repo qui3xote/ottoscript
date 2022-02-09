@@ -30,7 +30,7 @@ OPEN = CaselessKeyword("OPEN")
 
 class Assignment(OttoBase):
     parser = Group(
-        Var(fetch=False)("var")
+        Var()("var")
         + Literal('=')
         + (Var()
            | Entity()

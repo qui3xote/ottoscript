@@ -13,7 +13,7 @@ class AutoControls(OttoBase):
         AUTOMATION
         + ident("name")
         + Optional(
-            Var(fetch=False)('_trigger_var')
+            Var()('_trigger_var')
         )
         + Optional(
             RESTART('restart_option')

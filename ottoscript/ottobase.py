@@ -68,6 +68,7 @@ class OttoBase:
         super().__init__(*[], **{})
 
         self.ctx = type(self).ctx
+        self.parse_results = tokens
         self.tokens = tokens[0]
 
         try:
@@ -80,6 +81,9 @@ class OttoBase:
 
     def __str__(self):
         return " ".join([str(x) for x in self.tokens])
+
+    def copy(self):
+        return type(self)(self.parse_results)
 
     def debugtree(self, levels=5):
         if levels == 0:

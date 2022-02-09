@@ -34,7 +34,7 @@ async def test_string():
 async def test_var_no_fetch():
     """Verify we correctly parse a var"""
 
-    n = Var(fetch=False).parse_string("@foo")[0]
+    n = Var().parse_string("@foo")[0]
     assert n.name == '@foo'
 
 
@@ -52,6 +52,13 @@ async def test_var_with_attributes():
     n = Var().parse_string("@foo_entity:name")[0]
     r = await n.eval()
     assert r == "ship.crew"
+
+    n = Var().parse_string("@foo_entity:brightness")[0]
+    r = await n.eval()
+    assert r == 1
+
+    r = n.fetch()
+    assert r.name == "ship.crew.brightness"
 
     n = Var().parse_string("@foo_entity:number")[0]
     r = await n.eval()
