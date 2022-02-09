@@ -33,6 +33,11 @@ class AutoControls(OttoBase):
 
     def __init__(self, tokens):
         super().__init__(tokens)
+
+        # TODO Something is going wrong here.
+        # Either this is never called or something
+        # further down the line is going wrong.
+        # But honestly - should this live here?
         self.ctx.set_name(self.name)
 
 
