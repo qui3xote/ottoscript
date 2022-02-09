@@ -123,11 +123,11 @@ In addition to the base class and primitives, the `vocab` module defines smaller
 
 ```
 class RelativeTime(BaseVocab):
-    _parser = Numeric.parser()("_count") + (Hour.parser() | Minute.parser() | Second.parser())("_unit")
+    _parser = Number.parser()("_count") + (Hour.parser() | Minute.parser() | Second.parser())("_unit")
 
     @property
-    def as_seconds(self):
-        return self._count.value * self._unit.as_seconds
+    def seconds(self):
+        return self._count._value * self._unit.seconds
 ```
 
 ### Adding a Command
@@ -137,10 +137,10 @@ class Toggle(BaseCommand):
     _kwd = CaselessKeyword("TOGGLE")
     _parser = _kwd + Entity.parser()("_entity")
 
-    async def eval(self, interpreter):
+    async def eval(self):
         servicename = 'toggle'
         kwargs = {'entity_id': self._entity.name}
-        result = await interpreter.call_service(self._entity.domain, servicename, kwargs)
+        result = await self.ctx.interpreter.call_service(self._entity.domain, servicename, kwargs)
         return result
 ```
 
