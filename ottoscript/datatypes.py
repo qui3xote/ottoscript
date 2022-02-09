@@ -1,4 +1,3 @@
-from copy import copy
 from pyparsing import (
     Group,
     QuotedString,
