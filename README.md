@@ -120,7 +120,7 @@ Comparisons can also be chained together using AND, OR and NOT. So `IF light.off
 
 IF and CASE conditions are closed off by the END keyword. This allows for things like only placing conditions around a few commands and then having the rest always run, and also for nesting conditions. They both also support an optional ELSE section which will run if the comparison(s) are false. 
 
-**NB** Unlike HA YAML, the whole automation doesn't stop when a condition isn't met. The commands inside the condition aren't run, but OttoScript keeps going and tries to run the rest of the script. are false.
+**NB** Unlike HA YAML, the whole automation doesn't stop when a condition isn't met. The commands inside the condition aren't run, but OttoScript keeps going and tries to run the rest of the script.
 
 
 ## Appendix: Command Reference
