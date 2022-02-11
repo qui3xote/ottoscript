@@ -49,15 +49,16 @@ class StateTrigger(OttoBase):
 
 class StateChange(StateTrigger):
     term = (Entity() | Number() | String())
-    parser = Group(List(Entity())("entities")
-                   + CaselessKeyword("CHANGES")
-                   + Optional(FROM + (Entity()("_old")
-                                      | Number()("_old") | String()("_old")))
-                   + Optional(TO + (Entity()("_new")
-                                    | Number()("_new") | String()("_new")))
-                   + Optional(FOR + (TimeStamp()("_hold")
-                                     | RelativeTime()("_hold")))
-                   )
+    parser = Group(
+        List(Entity())("entities")
+        + CaselessKeyword("CHANGES")
+        + Optional(FROM + (Entity()("_old")
+                           | Number()("_old") | String()("_old")))
+        + Optional(TO + (Entity()("_new")
+                         | Number()("_new") | String()("_new")))
+        + Optional(FOR + (TimeStamp()("_hold")
+                          | RelativeTime()("_hold")))
+    )
 
     @property
     def hold_seconds(self):

@@ -37,12 +37,12 @@ AUTO start_end_work
 ;
 ```
 
-In this example, there are three automations; Each automation begins with `AUTO _name_` and  a WHEN statement, and ends with a semi-colon. So in the example above, the first two turn an input_boolean on and off at the beginning and end of the work day. The last automation watches for changes in the input_boolean and reacts by turning on/off lights and a white noise machine in my home office. It uses a case statment to check which state the input_boolean is in (on/off) before deciding which commands to run.
+In this example, there are three automations; Each automation begins with `AUTO _name_` and  a WHEN statement, and ends with a semi-colon. So in the example above, the first two turn an input_boolean on and off at the beginning and end of the work day. The last automation watches for changes in the input_boolean and reacts by turning on/off lights and a white noise machine in my home office. It uses a switch statment to check which state the input_boolean is in (on/off) before deciding which commands to run.
 
 Every Automation has three sections: Controls, Triggers and Actions. 
  - **Controls** give the automation a name, and have other options for deciding 'how' the automation runs. 
  - **Triggers** determine 'when' the automation runs - whether it's based on time of day or another event.
- - **Actions** determine 'what' an automation will do by running Commands (such as DIM, LOCK, or TURN OFF) and under what conditions, using IF or Case statements. 
+ - **Actions** determine 'what' an automation will do by running Commands (such as DIM, LOCK, or TURN OFF) and under what conditions, using IF or Switch statements. 
 
 ## Controls
 AUTO _name_ (_trigger_variable_ **@trigger**) (**SINGLE** | RESTART)

@@ -1,9 +1,16 @@
 import operator as op
-from pyparsing import (Group, Or, OneOrMore, opAssoc,
-                       infixNotation, Forward, Optional, MatchFirst)
+from pyparsing import (
+    Group,
+    OneOrMore,
+    opAssoc,
+    infixNotation,
+    Forward,
+    Optional,
+    MatchFirst
+)
 from .datatypes import String, Number, Var, Entity
 from .ottobase import OttoBase
-from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END
+from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END, SWITCH, DEFAULT
 from .commands import Command, Assignment
 
 
@@ -18,16 +25,18 @@ class Comparison(OttoBase):
         '>': op.gt
     }
 
-    term = (String()
-            | Number()
-            | Entity()
-            | Var()
-            )
+    term = (
+        String()
+        | Number()
+        | Entity()
+        | Var()
+    )
 
-    parser = Group(term("left")
-                   + MatchFirst([x for x in operators.keys()])("operand")
-                   + term("right")
-                   )
+    parser = Group(
+        term("left")
+        + MatchFirst([x for x in operators.keys()])("operand")
+        + term("right")
+    )
 
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -51,13 +60,15 @@ class Conditional(OttoBase):
     forward = Forward()
 
 
-class Then(Conditional):
-    instructions = Or(Command.parsers())
-    parser = Group(Optional(THEN)
-                   + OneOrMore(MatchFirst(Command.parsers())
-                               | Assignment("local")
-                               | Conditional.forward)("commands")
-                   )
+class CommandBlock(OttoBase):
+    parser = Group(
+        Optional(THEN)
+        + OneOrMore(
+            MatchFirst(Command.parsers())
+            | Assignment("local")
+            | Conditional.forward
+        )("commands")
+    )
 
     async def eval(self):
         results = []
@@ -68,20 +79,23 @@ class Then(Conditional):
         return results
 
 
-class If(Conditional):
+class Condition(Conditional):
     operators = {
         'AND': all,
         'OR': any,
         'NOT': lambda x: not x
     }
 
-    parser = Group(IF
-                   + infixNotation(Comparison(), [
-                       (NOT, 1, opAssoc.RIGHT, ),
-                       (AND, 2, opAssoc.LEFT, ),
-                       (OR, 2, opAssoc.LEFT, ),
-                   ])("conditions")
-                   )
+    parser = Group(
+        infixNotation(
+            Comparison(),
+            [
+                (NOT, 1, opAssoc.RIGHT, ),
+                (AND, 2, opAssoc.LEFT, ),
+                (OR, 2, opAssoc.LEFT, ),
+            ]
+        )("conditions")
+    )
 
     def __init__(self, tokens):
         super().__init__(tokens)
@@ -93,10 +107,7 @@ class If(Conditional):
         self._eval_tree = self.build_evaluator_tree(conditions)
 
     def __str__(self):
-        if type(self.conditions) == list:
-            return " ".join(['IF'] + [str(x) for x in self.conditions])
-        else:
-            return " ".join([str(x) for x in self.tokens])
+        return " ".join([str(x) for x in self.tokens])
 
     async def eval(self):
         result = await self.eval_tree(self._eval_tree)
@@ -139,30 +150,16 @@ class If(Conditional):
         return {'opfunc': operand, 'items': comparisons}
 
 
-class IfThen(Conditional):
-    parser = Group(If()("conditions")
-                   + Then()("actions")
-                   + END
-                   )
-
-    async def eval(self):
-        conditions_result = await self.conditions.eval()
-        if conditions_result is True:
-            result = await self.actions.eval()
-            return result
-
-        return False
-
-
 class IfThenElse(Conditional):
-    parser = Group(If()("conditions")
-                   + Then()("actions")
-                   + Optional(ELSE + (Conditional.forward("fallback")
-                                      | Then()("fallback")
-                                      )
-                              )
-                   + END
+    parser = Group(
+        IF + Condition()("conditions")
+        + CommandBlock()("actions")
+        + Optional(ELSE + (Conditional.forward("fallback")
+                           | CommandBlock()("fallback")
+                           )
                    )
+        + END
+    )
 
     async def eval(self):
         conditions_result = await self.conditions.eval()
@@ -177,26 +174,41 @@ class IfThenElse(Conditional):
         return result
 
 
-class Case(Conditional):
-    parser = Group(CASE
-                   + OneOrMore(IfThen())("options")
-                   + Optional(ELSE + Then()("fallback"))
-                   + END)
+class Switch(Conditional):
+    parser = Group(
+        SWITCH
+        + OneOrMore(
+            Group(
+                CASE
+                + Condition()
+                + CommandBlock()
+            )
+        )("cases")
+        + Optional(
+            DEFAULT
+            + (CommandBlock()
+               | Conditional.forward
+               )
+        )("fallback")
+        + END
+    )
 
     async def eval(self):
         selected = None
 
-        for n, statement in enumerate(self.options):
-            if await statement.eval() is not False:
+        for n, case in enumerate(self.cases):
+            conditions, commands = case[1:]
+            if await conditions.eval() is not False:
                 selected = n + 1
+                await commands.eval()
                 break
 
         if selected is None:
             if hasattr(self, 'fallback'):
-                await self.fallback.eval()
+                await self.fallback[-1].eval()
                 selected = 0
 
         return selected
 
 
-Conditional.forward <<= Or(IfThenElse(), Case())
+Conditional.forward <<= MatchFirst(IfThenElse(), Switch())
