@@ -24,15 +24,13 @@ AUTO work_end
 
 AUTO start_end_work
   WHEN @working CHANGES
-    CASE
-      IF @working == 'on'
+    SWITCH
+      CASE @working == 'on'
           DIM AREA office to 70%
           TURN ON SWITCH switch.noise_machine_on_off
-      END
-      IF  @working == 'off'
+      CASE  @working == 'off'
           TURN OFF LIGHT AREA office
           TURN OFF SWITCH switch.noise_machine_on_off
-      END
     END
 ;
 ```
@@ -106,8 +104,8 @@ There are some exceptions to this pattern:
 3. Then there are few special commands that just work differently, like PASS, WAIT and SET, because, well they *are* different. 
 
 There are two special commands that are worth calling out:
-- Variable assignments are commands, but don't have a keyword. They take the form @varname = _value_. Variable names must start with an @ and can only include letters, numbers and underscores in the rest of the name. They can contain entities, areas, numbers, strings (anything enclosed in quotes), lists, and dictionaries (`(code=1234)`). Because they are commands in their own right, you can't assign a variable inside another command (you can read it however).
-- CALL lets you run *any* home assistant service, and it's format is somewhat different to allow it be flexible. So even if a service isn't directly supported with a keyword command, you can still use CALL to get the job done. 
+- Variable assignments are commands, but don't have a keyword. They take the form @varname = _value_. Variable names must start with an @ and can only include letters, numbers and underscores in the rest of the name. They can contain entities, areas, numbers, strings (anything enclosed in quotes), lists, and dictionaries (`(code=1234)`).
+- CALL lets you run *any* home assistant service, and it's format is somewhat different to allow it be flexible. So even if a service isn't directly supported with it's own keyword command, you can still use CALL to get the job done. 
 
 ### Conditions
 IF and CASE let you selectively run parts of the automation depending what else is true, using comparisons, like so:
