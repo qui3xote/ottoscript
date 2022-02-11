@@ -1,7 +1,8 @@
 from pyparsing import (CaselessKeyword,
                        Group,
                        Combine,
-                       Or,
+                       MatchFirst,
+                       MatchFirst,
                        Char,
                        nums,
                        Optional,
@@ -10,15 +11,15 @@ from .ottobase import OttoBase
 from .keywords import HOUR, MINUTE, SECOND
 from .datatypes import Number,  Var
 
-MONDAY = Or(map(CaselessKeyword, "MONDAY MON".split()))
-TUESDAY = Or(map(CaselessKeyword, "TUESDAY TUE".split()))
-WEDNESDAY = Or(map(CaselessKeyword, "WEDNESDAY WED".split()))
-THURSDAY = Or(map(CaselessKeyword, "THURSDAY THU".split()))
-FRIDAY = Or(map(CaselessKeyword, "FRIDAY FRI".split()))
-SATURDAY = Or(map(CaselessKeyword, "SATURDAY SAT".split()))
-SUNDAY = Or(map(CaselessKeyword, "SUNDAY SUN".split()))
-WEEKDAY = Or(map(CaselessKeyword, "WEEKDAY WEEKDAYS".split()))
-WEEKEND = Or(map(CaselessKeyword, "WEEKEND WEEKENDS".split()))
+MONDAY = MatchFirst(map(CaselessKeyword, "MONDAY MON".split()))
+TUESDAY = MatchFirst(map(CaselessKeyword, "TUESDAY TUE".split()))
+WEDNESDAY = MatchFirst(map(CaselessKeyword, "WEDNESDAY WED".split()))
+THURSDAY = MatchFirst(map(CaselessKeyword, "THURSDAY THU".split()))
+FRIDAY = MatchFirst(map(CaselessKeyword, "FRIDAY FRI".split()))
+SATURDAY = MatchFirst(map(CaselessKeyword, "SATURDAY SAT".split()))
+SUNDAY = MatchFirst(map(CaselessKeyword, "SUNDAY SUN".split()))
+WEEKDAY = MatchFirst(map(CaselessKeyword, "WEEKDAY WEEKDAYS".split()))
+WEEKEND = MatchFirst(map(CaselessKeyword, "WEEKEND WEEKENDS".split()))
 
 
 class Hour(OttoBase):
@@ -50,7 +51,7 @@ class TimePart(OttoBase):
     @classmethod
     def pre_parse(cls, *args, **kwargs):
         cls.parser.set_name(cls.__name__)
-        parser = Or(cls.parser, Var())
+        parser = MatchFirst(cls.parser, Var())
         parser = parser.set_parse_action(lambda x: cls(x, *args, **kwargs))
         return parser
 

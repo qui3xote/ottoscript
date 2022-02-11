@@ -1,7 +1,6 @@
 from pyparsing import (
     Group,
     QuotedString,
-    Or,
     Suppress,
     Word,
     delimited_list,
@@ -145,11 +144,11 @@ class List(OttoBase):
 
 
 class Dict(OttoBase):
-    _allowedvalues = Or([String(),
-                         Number(),
-                         Entity(),
-                         Var()
-                         ])
+    _allowedvalues = (String()
+                      | Number()
+                      | Entity()
+                      | Var()
+                      )
     _attr_label = Word(alphas + '_', alphanums + '_')
     _attrvalue = Suppress("=") + _allowedvalues + Optional(Suppress(","))
     _dict = dict_of(_attr_label, _attrvalue)
@@ -172,9 +171,10 @@ class Dict(OttoBase):
 
 
 class Target(OttoBase):
-    parser = Group(List(Entity() ^ Var())("inputs")
-                   ^ (AREA + List(Area() ^ Var())("inputs"))
-                   )
+    parser = Group(
+        List(Entity() ^ Var())("inputs")
+        ^ (AREA + List(Area() ^ Var())("inputs"))
+    )
 
     async def eval(self):
         entities = []

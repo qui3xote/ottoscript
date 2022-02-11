@@ -1,6 +1,13 @@
 import operator as op
-from pyparsing import (Group, Or, OneOrMore, opAssoc,
-                       infixNotation, Forward, Optional, MatchFirst)
+from pyparsing import (
+    Group,
+    OneOrMore,
+    opAssoc,
+    infixNotation,
+    Forward,
+    Optional,
+    MatchFirst
+)
 from .datatypes import String, Number, Var, Entity
 from .ottobase import OttoBase
 from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END, SWITCH, DEFAULT
@@ -177,7 +184,12 @@ class Switch(Conditional):
                 + CommandBlock()
             )
         )("cases")
-        + Optional(DEFAULT + CommandBlock())("fallback")
+        + Optional(
+            DEFAULT
+            + (CommandBlock()
+               | Conditional.forward
+               )
+        )("fallback")
         + END
     )
 
@@ -199,4 +211,4 @@ class Switch(Conditional):
         return selected
 
 
-Conditional.forward <<= Or(IfThenElse(), Switch())
+Conditional.forward <<= MatchFirst(IfThenElse(), Switch())
