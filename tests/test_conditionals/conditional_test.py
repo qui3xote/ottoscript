@@ -2,11 +2,10 @@ import pytest
 from collections import Counter
 from ottoscript.conditionals import (
     Comparison,
-    Then,
-    If,
-    IfThen,
+    CommandBlock,
+    Condition,
     IfThenElse,
-    Case
+    Switch
 )
 from ottoscript.interpreters import Interpreter
 from ottoscript.ottobase import OttoContext, OttoBase
@@ -73,43 +72,24 @@ async def test_then():
                 ]
 
     for n, s in enumerate(strings):
-        t = Then().parse_string(s)[0]
+        t = CommandBlock().parse_string(s)[0]
         results = await t.eval()
         for num, result in enumerate(results):
             assert result == expected[n][num]
 
 
 @pytest.mark.asyncio
-async def test_if():
+async def test_condition():
     """Verify we correctly parse an if statement"""
 
-    tests = [("IF light.cupola_lights == 'light.cupola_lights'", True),
-             ("IF 10 > 5 AND 'string' == 'string'", True),
-             ("IF 5 > 10 OR (10 > 5 AND 'string' == 'string')", True),
-             ("IF 'foobar' < 'foo'", False)]
+    tests = [("light.cupola_lights == 'light.cupola_lights'", True),
+             ("10 > 5 AND 'string' == 'string'", True),
+             ("5 > 10 OR (10 > 5 AND 'string' == 'string')", True),
+             ("'foobar' < 'foo'", False)]
 
     for t in tests:
-        n = If().parse_string(t[0])[0]
+        n = Condition().parse_string(t[0])[0]
         assert await n.eval() == t[1]
-
-
-@pytest.mark.asyncio
-async def test_ifthen():
-    """Verify we correctly parse an IfThen statement"""
-
-    tests = [("""IF light.cupola_lights == 'light.cupola_lights'
-                 WAIT 30 seconds END""", [30]),
-             ("""IF 10 > 5 AND 'string' == 'string'
-                 WAIT 30 seconds WAIT 60 seconds END""", [30, 60])]
-
-    for t in tests:
-        n = IfThen().parse_string(t[0])[0]
-        x = await n.eval()
-        assert Counter(x) == Counter(t[1])
-
-    false_string = "IF 'foobar' < 'foo' WAIT 30 SECONDS END"
-    n = IfThen().parse_string(false_string)[0]
-    assert await n.eval() is False
 
 
 @pytest.mark.asyncio
@@ -139,47 +119,42 @@ async def test_ifthenelse():
 
 
 @pytest.mark.asyncio
-async def test_case():
+async def test_switch():
     """Verify we correctly parse an IfThenElse statement"""
 
-    tests = [("""CASE
-                 IF light.cupola_lights == 'light.cupola_lights'
+    tests = [("""SWITCH
+                 CASE light.cupola_lights == 'light.cupola_lights'
                     WAIT 30 seconds
-                    END
-                 IF light.office_lights == 'light.office_lights'
+                 CASE light.office_lights == 'light.office_lights'
                     WAIT 30 seconds
-                    END
-                 ELSE WAIT 60 seconds
+                 DEFAULT
+                    WAIT 60 seconds
                  END""", 1),
-             ("""CASE
-                  IF light.cupola_lights == 'light.office_lights'
+             ("""SWITCH
+                  CASE light.cupola_lights == 'light.office_lights'
                      WAIT 30 seconds
-                     END
-                  IF light.office_lights == 'light.office_lights'
+                  CASE light.office_lights == 'light.office_lights'
                      WAIT 30 seconds
-                     END
-                  ELSE WAIT 60 seconds
+                  DEFAULT
+                    WAIT 60 seconds
                   END""", 2),
-             ("""CASE
-                  IF light.cupola_lights == 'light.office_lights'
+             ("""SWITCH
+                  CASE light.cupola_lights == 'light.office_lights'
                      WAIT 30 seconds
-                     END
-                  IF light.office_lights == 'light.cupola_lights'
+                  CASE light.office_lights == 'light.cupola_lights'
                      WAIT 30 seconds
-                     END
-                  ELSE WAIT 60 seconds
+                  DEFAULT
+                    WAIT 60 seconds
                   END""", 0),
-             ("""CASE
-                   IF light.cupola_lights == 'light.office_lights'
+             ("""SWITCH
+                   CASE light.cupola_lights == 'light.office_lights'
                       WAIT 30 seconds
-                      END
-                   IF light.office_lights == 'light.cupola_lights'
+                   CASE light.office_lights == 'light.cupola_lights'
                       WAIT 30 seconds
-                      END
                    END""", None)
              ]
 
     for t in tests:
-        n = Case().parse_string(t[0])[0]
+        n = Switch().parse_string(t[0])[0]
         x = await n.eval()
         assert x == t[1]

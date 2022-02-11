@@ -20,9 +20,11 @@ OR = CaselessKeyword('OR')
 NOT = CaselessKeyword('NOT')
 END = CaselessKeyword('END')
 CASE = CaselessKeyword('CASE')
+SWITCH = CaselessKeyword('SWITCH')
 TO = CaselessKeyword('TO')
 ON = CaselessKeyword('ON')
 OFF = CaselessKeyword('OFF')
+DEFAULT = CaselessKeyword('DEFAULT')
 
 # Time
 HOUR = Or(map(CaselessKeyword, ["HOUR", "HOURS"]))

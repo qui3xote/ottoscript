@@ -4,7 +4,7 @@ from .keywords import AUTOMATION, RESTART, WHEN
 from .ottobase import OttoBase
 from .datatypes import ident, Var
 from .commands import Assignment
-from .conditionals import IfThenElse, Case, Then
+from .conditionals import IfThenElse, Switch, CommandBlock
 from .triggers import StateTrigger, TimeTrigger
 
 
@@ -42,9 +42,12 @@ class AutoControls(OttoBase):
 
 
 class Actions(OttoBase):
-    conditionals = (IfThenElse() | Case())
     parser = Group(
-        OneOrMore(conditionals | Then())("clauses")
+        OneOrMore(
+            IfThenElse()
+            | Switch()
+            | CommandBlock()
+        )("clauses")
     )
 
     async def eval(self):
