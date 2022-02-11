@@ -54,7 +54,6 @@ class Conditional(OttoBase):
 
 
 class CommandBlock(OttoBase):
-    instructions = Or(Command.parsers())
     parser = Group(
         Optional(THEN)
         + OneOrMore(
