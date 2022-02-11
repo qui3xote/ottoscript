@@ -1,7 +1,7 @@
-from pyparsing import CaselessKeyword, Or
+from pyparsing import CaselessKeyword, MatchFirst
 
 # control keywords
-AUTOMATION = Or(map(CaselessKeyword, ["AUTOMATION", "AUTO"]))
+AUTOMATION = MatchFirst(map(CaselessKeyword, ["AUTOMATION", "AUTO"]))
 RESTART = CaselessKeyword("RESTART")
 
 # Keywords
@@ -20,21 +20,23 @@ OR = CaselessKeyword('OR')
 NOT = CaselessKeyword('NOT')
 END = CaselessKeyword('END')
 CASE = CaselessKeyword('CASE')
+SWITCH = CaselessKeyword('SWITCH')
 TO = CaselessKeyword('TO')
 ON = CaselessKeyword('ON')
 OFF = CaselessKeyword('OFF')
+DEFAULT = CaselessKeyword('DEFAULT')
 
 # Time
-HOUR = Or(map(CaselessKeyword, ["HOUR", "HOURS"]))
-MINUTE = Or(map(CaselessKeyword, ["MINUTE", "MINUTES", "MIN"]))
-SECOND = Or(map(CaselessKeyword, ["SECOND", "SECONDS", "SEC"]))
+HOUR = MatchFirst(map(CaselessKeyword, ["HOUR", "HOURS"]))
+MINUTE = MatchFirst(map(CaselessKeyword, ["MINUTE", "MINUTES", "MIN"]))
+SECOND = MatchFirst(map(CaselessKeyword, ["SECOND", "SECONDS", "SEC"]))
 SUNRISE = CaselessKeyword('SUNRISE')
 SUNSET = CaselessKeyword('SUNSET')
 BEFORE = CaselessKeyword('BEFORE')
 AFTER = CaselessKeyword('AFTER')
 
 # Other
-AREA = Or(map(CaselessKeyword, ["AREAS", "AREA"]))
+AREA = MatchFirst(map(CaselessKeyword, ["AREAS", "AREA"]))
 
 reserved_words = (WHEN | IF | THEN | ELSE | CASE | END
                   | FROM | IS | FOR | TRUE | CHANGES | TO | FROM | ON | OFF
