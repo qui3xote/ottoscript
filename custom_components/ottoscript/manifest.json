@@ -1,0 +1,11 @@
+{
+  "codeowners": ["@qui3xote"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/user/my_component/",
+  "domain": "ottoscript",
+  "iot_class": "local_push",
+  "name": "OttoScript",
+  "requirements": [],
+  "version": "0.4.0"
+}
