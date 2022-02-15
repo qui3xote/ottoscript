@@ -198,7 +198,7 @@ class Dim(Command):
 
         number = await self.number.eval()
 
-        if number > 0 or hasattr(self, '_use_pct'):
+        if number > 0 or 'step' in self.param:
             self.service_name = "turn_on"
             self.kwargs = {self.param: number}
         else:
