@@ -3,7 +3,7 @@ from pyparsing import (CaselessKeyword,
                        Optional,
                        Group,
                        )
-from .ottobase import OttoBase
+from .core import OttoBase
 from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
 from .datatypes import Entity, Number, List, String, Var
 from .time import RelativeTime, TimeStamp, DayOfWeek

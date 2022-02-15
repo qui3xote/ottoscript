@@ -1,5 +1,5 @@
 from pyparsing import CaselessKeyword, Optional, MatchFirst, Group, Literal
-from .ottobase import OttoBase
+from .core import OttoBase
 from .datatypes import (Number,
                         Entity,
                         String,

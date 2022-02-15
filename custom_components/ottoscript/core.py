@@ -2,26 +2,6 @@ from pyparsing import ParseResults, CaselessKeyword
 from .interpreters import Interpreter, PrintLogger
 
 
-class VarHandler:
-    def __init__(self):
-        self.internal = {}
-        self.external = {}
-
-    def get(self, key):
-        internal = self.internal.get(key)
-
-        if internal is None:
-            return self.external.get(key)
-        else:
-            return internal
-
-    def update(self, dictionary):
-        self.internal.update(dictionary)
-
-    def update_global(self, dictionary):
-        self.external.update(dictionary)
-
-
 class OttoContext:
     def __init__(self, interpreter=None, logger=None):
 

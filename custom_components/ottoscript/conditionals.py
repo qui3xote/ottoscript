@@ -9,7 +9,7 @@ from pyparsing import (
     MatchFirst
 )
 from .datatypes import String, Number, Var, Entity
-from .ottobase import OttoBase
+from .core import OttoBase
 from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END, SWITCH, DEFAULT
 from .commands import Command, Assignment
 

@@ -1,5 +1,5 @@
 import pytest
-from ottoscript.ottobase import OttoBase
+from ottoscript.core import OttoBase
 from ottoscript.controls import GlobalParser
 
 
