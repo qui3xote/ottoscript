@@ -117,3 +117,8 @@ class OttoBase:
             cls.ctx = OttoContext()
         else:
             cls.ctx = context
+
+    @classmethod
+    def from_string(cls, string, *args, **kwargs):
+        parser = cls.__new__(cls, *args, **kwargs)
+        return parser.parse_string(string)[0]
