@@ -158,3 +158,45 @@ async def test_switch():
         n = Switch().parse_string(t[0])[0]
         x = await n.eval()
         assert x == t[1]
+
+
+@pytest.mark.asyncio
+async def test_switch_left():
+    """Verify we correctly parse a switch statement"""
+
+    tests = [("""SWITCH light.cupola_lights
+                 CASE 'light.cupola_lights'
+                    WAIT 30 seconds
+                 CASE 'light.office_lights'
+                    WAIT 30 seconds
+                 DEFAULT
+                    WAIT 60 seconds
+                 END""", 1),
+             ("""SWITCH light.cupola_lights
+                  CASE 'light.office_lights'
+                     WAIT 30 seconds
+                  CASE 'light.cupola_lights'
+                     WAIT 30 seconds
+                  DEFAULT
+                    WAIT 60 seconds
+                  END""", 2),
+             ("""SWITCH light.cupola_lights
+                  CASE 'light.office_lights'
+                     WAIT 30 seconds
+                  CASE 'light.den_lights'
+                     WAIT 30 seconds
+                  DEFAULT
+                    WAIT 60 seconds
+                  END""", 0),
+             ("""SWITCH light.cupola_lights
+                   CASE  'light.office_lights'
+                      WAIT 30 seconds
+                   CASE 'light.den_lights'
+                      WAIT 30 seconds
+                   END""", None)
+             ]
+
+    for n, t in enumerate(tests):
+        s = Switch().parse_string(t[0])[0]
+        x = await s.eval()
+        assert x == t[1]

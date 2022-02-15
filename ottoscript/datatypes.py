@@ -238,7 +238,7 @@ class Input(OttoBase):
             return result
 
     @classmethod
-    def pre_parse(cls, result_type, *args, **kwargs):
+    def pre_parse(cls, result_type="any", *args, **kwargs):
         if result_type == "numeric":
             parser = Group(Number()("input")
                            | Entity()("input")

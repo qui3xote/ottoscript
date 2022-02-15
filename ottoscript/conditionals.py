@@ -8,7 +8,7 @@ from pyparsing import (
     Optional,
     MatchFirst
 )
-from .datatypes import String, Number, Var, Entity
+from .datatypes import String, Number, Var, Entity, Input
 from .ottobase import OttoBase
 from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END, SWITCH, DEFAULT
 from .commands import Command, Assignment
@@ -154,10 +154,9 @@ class IfThenElse(Conditional):
     parser = Group(
         IF + Condition()("conditions")
         + CommandBlock()("actions")
-        + Optional(ELSE + (Conditional.forward("fallback")
-                           | CommandBlock()("fallback")
-                           )
-                   )
+        + Optional(
+            ELSE + CommandBlock()("fallback")
+        )
         + END
     )
 
@@ -177,18 +176,16 @@ class IfThenElse(Conditional):
 class Switch(Conditional):
     parser = Group(
         SWITCH
+        + Optional(Input()('left'))
         + OneOrMore(
             Group(
                 CASE
-                + Condition()
-                + CommandBlock()
+                + (Condition()("condition") | Input()("right"))
+                + CommandBlock()("commands")
             )
         )("cases")
         + Optional(
-            DEFAULT
-            + (CommandBlock()
-               | Conditional.forward
-               )
+            DEFAULT + CommandBlock()
         )("fallback")
         + END
     )
@@ -197,10 +194,18 @@ class Switch(Conditional):
         selected = None
 
         for n, case in enumerate(self.cases):
-            conditions, commands = case[1:]
-            if await conditions.eval() is not False:
+            print(case)
+            run = False
+            if hasattr(self, 'left') and 'right' in case.keys():
+                left = await self.left.eval()
+                right = await case['right'].eval()
+                run = left == right
+            else:
+                run = await case['condition'].eval()
+
+            if run is True:
                 selected = n + 1
-                await commands.eval()
+                await case['commands'].eval()
                 break
 
         if selected is None:
