@@ -1,2 +1,2 @@
 from .controls import Auto
-from .ottobase import OttoBase, OttoContext
+from .core import OttoBase, OttoContext

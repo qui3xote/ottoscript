@@ -8,7 +8,7 @@ from ottoscript.conditionals import (
     Switch
 )
 from ottoscript.interpreters import Interpreter
-from ottoscript.ottobase import OttoContext, OttoBase
+from ottoscript.core import OttoContext, OttoBase
 from ottoscript.datatypes import String
 
 interpreter = Interpreter()

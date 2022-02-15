@@ -12,7 +12,7 @@ from pyparsing import (
     common
 )
 from .keywords import reserved_words, AREA
-from .ottobase import OttoBase
+from .core import OttoBase
 
 ident = ~reserved_words + common.identifier
 ident = ident.set_parse_action(lambda x: x[0])
