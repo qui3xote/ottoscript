@@ -1,3 +1,4 @@
+import operator as op
 from pyparsing import CaselessKeyword, MatchFirst
 
 # control keywords
@@ -42,3 +43,12 @@ reserved_words = (WHEN | IF | THEN | ELSE | CASE | END
                   | FROM | IS | FOR | TRUE | CHANGES | TO | FROM | ON | OFF
                   | HOUR | MINUTE | SECOND | SUNRISE | SUNSET | BEFORE | AFTER
                   | AREA)
+
+OPERATORS = {
+    '==': op.eq,
+    '<=': op.le,
+    '>=': op.ge,
+    '!=': op.ne,
+    '<': op.lt,
+    '>': op.gt
+}

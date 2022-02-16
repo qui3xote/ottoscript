@@ -1,4 +1,3 @@
-import operator as op
 from pyparsing import (
     Group,
     OneOrMore,
@@ -10,20 +9,22 @@ from pyparsing import (
 )
 from .datatypes import String, Number, Var, Entity, Input
 from .ottobase import OttoBase
-from .keywords import IF, AND, OR, NOT, THEN, ELSE, CASE, END, SWITCH, DEFAULT
+from .keywords import (
+    IF,
+    AND,
+    OR,
+    NOT,
+    THEN,
+    ELSE,
+    CASE,
+    END,
+    SWITCH,
+    DEFAULT,
+    OPERATORS)
 from .commands import Command, Assignment
 
 
 class Comparison(OttoBase):
-
-    operators = {
-        '==': op.eq,
-        '<=': op.le,
-        '>=': op.ge,
-        '!=': op.ne,
-        '<': op.lt,
-        '>': op.gt
-    }
 
     term = (
         String()
@@ -34,13 +35,13 @@ class Comparison(OttoBase):
 
     parser = Group(
         term("left")
-        + MatchFirst([x for x in operators.keys()])("operand")
+        + MatchFirst([x for x in OPERATORS.keys()])("operand")
         + term("right")
     )
 
     def __init__(self, tokens):
         super().__init__(tokens)
-        self.opfunc = self.operators[self.operand]
+        self.opfunc = OPERATORS[self.operand]
         self.left = self.left[0]
         self.right = self.right[0]
 

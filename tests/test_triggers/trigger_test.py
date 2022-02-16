@@ -45,19 +45,40 @@ async def test_sunevent():
 async def test_statechange():
     """Verify we correctly parse State triggers"""
 
-    strings = [("input_boolean.mode CHANGES", ["input_boolean.mode"]),
-               ("input_boolean.mode CHANGES from 'on'",
-                ["input_boolean.mode.old == 'on'"]),
-               ("input_boolean.mode CHANGES to 'on'",
-                ["input_boolean.mode == 'on'"]),
-               ("input_boolean.mode CHANGES from 'off' to 'on'",
-               ["input_boolean.mode == 'on' "
-                   + "and input_boolean.mode.old == 'off'"]),
-               ("light.light1, light.light2 CHANGES from 'off' to 'on'",
-               ["light.light1 == 'on' and light.light1.old == 'off'",
+    strings = [
+        (
+            "input_boolean.mode CHANGES",
+            ["input_boolean.mode"]
+        ),
+
+        (
+            "input_boolean.mode CHANGES from 'on'",
+            ["input_boolean.mode.old == 'on'"]
+        ),
+
+        (
+            "input_boolean.mode CHANGES to 'on'",
+            ["input_boolean.mode == 'on'"]
+        ),
+
+        (
+            "input_boolean.mode CHANGES from 'off' to 'on'",
+            ["input_boolean.mode == 'on' "
+             + "and input_boolean.mode.old == 'off'"]
+        ),
+
+        (
+            "light.light1, light.light2 CHANGES from 'off' to 'on'",
+            ["light.light1 == 'on' and light.light1.old == 'off'",
                 "light.light2 == 'on' and light.light2.old == 'off'"]
-                )
-               ]
+        ),
+
+        (
+            "light.light1:brightness CHANGES from <= 1 to > 1",
+            ["float(light.light1.brightness) > 1 and " +
+                "float(light.light1.brightness.old) <= 1"]
+        )
+    ]
 
     for s in strings:
         n = StateChange().parse_string(s[0])[0]

@@ -1,10 +1,22 @@
 from itertools import product
-from pyparsing import (CaselessKeyword,
-                       Optional,
-                       Group,
-                       )
+from pyparsing import (
+    CaselessKeyword,
+    Optional,
+    Group,
+    Or
+)
 from .ottobase import OttoBase
-from .keywords import FROM, TO, FOR, ON, BEFORE, AFTER, SUNRISE, SUNSET
+from .keywords import (
+    FROM,
+    TO,
+    FOR,
+    ON,
+    BEFORE,
+    AFTER,
+    SUNRISE,
+    SUNSET,
+    OPERATORS
+)
 from .datatypes import Entity, Number, List, String, Var
 from .time import RelativeTime, TimeStamp, DayOfWeek
 
@@ -21,10 +33,27 @@ class StateTrigger(OttoBase):
 
                 string = []
                 if self.new is not None:
-                    string.append(f"{e.name} == '{self.new}'")
+                    print(f"{self.new}, {type(self.new)}")
+                    if type(self.new) in (int, float):
+                        string.append(
+                            f"float({e.name}) {self.new_op} {self.new}"
+                        )
+                    else:
+                        string.append(
+                            f"{e.name} {self.new_op} '{self.new}'"
+                        )
 
                 if self.old is not None:
-                    string.append(f"{e.name}.old == '{self.old}'")
+                    print(f"{self.old}, {type(self.old)}")
+                    if type(self.old) in (int, float):
+                        print("i'm a float!!!!")
+                        string.append(
+                            f"float({e.name}.old) {self.old_op} {self.old}"
+                        )
+                    else:
+                        string.append(
+                            f"{e.name}.old {self.old_op} '{self.old}'"
+                        )
 
                 if len(string) == 0:
                     string.append(f"{e.name}")
@@ -48,16 +77,23 @@ class StateTrigger(OttoBase):
 
 
 class StateChange(StateTrigger):
-    term = (Entity() | Number() | String())
+    operator = Or(OPERATORS.keys())
     parser = Group(
         List(Entity())("entities")
         + CaselessKeyword("CHANGES")
-        + Optional(FROM + (Entity()("_old")
-                           | Number()("_old") | String()("_old")))
-        + Optional(TO + (Entity()("_new")
-                         | Number()("_new") | String()("_new")))
-        + Optional(FOR + (TimeStamp()("_hold")
-                          | RelativeTime()("_hold")))
+        + Optional(
+            FROM
+            + Optional(operator("_old_op"))
+            + (Entity()("_old") | Number()("_old") | String()("_old"))
+        )
+        + Optional(
+            TO
+            + Optional(operator("_new_op"))
+            + (Entity()("_new") | Number()("_new") | String()("_new"))
+        )
+        + Optional(
+            FOR + (TimeStamp()("_hold") | RelativeTime()("_hold"))
+        )
     )
 
     @property
@@ -73,6 +109,20 @@ class StateChange(StateTrigger):
             return self._old._value
         else:
             return None
+
+    @property
+    def old_op(self):
+        if hasattr(self, "_old_op"):
+            return self._old_op
+        else:
+            return "=="
+
+    @property
+    def new_op(self):
+        if hasattr(self, "_new_op"):
+            return self._new_op
+        else:
+            return "=="
 
     @property
     def new(self):
