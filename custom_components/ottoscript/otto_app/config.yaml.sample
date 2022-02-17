@@ -1,0 +1,28 @@
+ottopyscript:
+  - directory: /config/user_scripts/
+    verbose: 0 # setting this to 1 will send more data to the logs for debugging
+    area_shortcuts: # each key is treated like an area and expanded to include all the areas below it.
+      basement:
+        - media_room
+        - basement_game_area
+        - basement_stairs
+      first_floor:
+        - kitchen
+        - entryway
+        - dining_room
+      master_suite:
+        - master_bedroom
+        - master_bathroom
+      second_floor:
+        - upstairs_hallway
+        - playroom
+        - kids_hallway
+      exterior:
+        - front_porch
+        - deck
+      home:
+        - exterior # you can regroup shortcuts to create hierarchy. Just don't create a loop by accident.
+        - first_floor
+        - second_floor
+        - basement
+        - master_suite
