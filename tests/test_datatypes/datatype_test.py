@@ -1,6 +1,6 @@
 import pytest
 from collections import Counter
-from ottoscript.core import OttoBase, OttoContext
+from ottoscript.base import OttoBase, OttoContext
 from ottoscript.datatypes import (Number,
                                   String,
                                   Var,

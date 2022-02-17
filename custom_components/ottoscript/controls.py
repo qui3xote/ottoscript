@@ -1,7 +1,7 @@
 from pyparsing import (Group, Optional, MatchFirst,
                        Suppress, ZeroOrMore, OneOrMore)
 from .keywords import AUTOMATION, RESTART, WHEN
-from .core import OttoBase
+from .base import OttoBase
 from .datatypes import ident, Var
 from .commands import Assignment
 from .conditionals import IfThenElse, Switch, CommandBlock

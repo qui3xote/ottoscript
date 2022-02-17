@@ -7,7 +7,7 @@ from pyparsing import (CaselessKeyword,
                        nums,
                        Optional,
                        common)
-from .core import OttoBase
+from .base import OttoBase
 from .keywords import HOUR, MINUTE, SECOND
 from .datatypes import Number,  Var
 
